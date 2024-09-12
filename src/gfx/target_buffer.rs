@@ -1,8 +1,7 @@
 use ggmath::prelude::*;
 
-use crate::color::*;
-
 /// Represents a GL buffer for rendering to.
+// TODO: Make it support other types of buffers besides framebuffers.
 pub struct TargetBuffer {
     handle: u32,
 }
@@ -19,6 +18,12 @@ impl TargetBuffer {
 
     /// Clear the buffer with a color.
     pub fn clear_with_color(&self, color: Vector4<f32>) {
+        // Use the buffer pointed to by the handle.
+        // TODO: Make it support other types of buffers.
+        unsafe {
+            gl::BindFramebuffer(gl::FRAMEBUFFER, self.handle);
+        }
+        // Clear the buffer.
         unsafe {
             gl::ClearColor(color.x(), color.y(), color.z(), color.w());
             gl::Clear(gl::COLOR_BUFFER_BIT);
