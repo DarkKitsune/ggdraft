@@ -4,9 +4,7 @@ pub struct Data {
 
 impl Data {
     pub fn new() -> Self {
-        Self {
-            closed: false,
-        }
+        Self { closed: false }
     }
 
     pub fn close(&mut self) {

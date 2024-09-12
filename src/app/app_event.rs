@@ -24,6 +24,6 @@ pub fn render(_app_data: AppData<Data>, framebuffer: TargetBuffer) -> AppEventRe
 
     // Clear the framebuffer with the clear color.
     framebuffer.clear_with_color(clear_color);
-    
+
     Ok(())
 }

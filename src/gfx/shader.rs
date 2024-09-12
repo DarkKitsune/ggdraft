@@ -3,7 +3,7 @@ use std::ffi::CString;
 use anyhow::Result;
 
 /// Represents a GL shader
-pub struct Shader{
+pub struct Shader {
     handle: u32,
     stage: ShaderStage,
 }
@@ -38,7 +38,12 @@ impl Shader {
             // Get error message
             let mut buffer = vec![0; len as usize];
             unsafe {
-                gl::GetShaderInfoLog(handle, len, std::ptr::null_mut(), buffer.as_mut_ptr() as *mut i8);
+                gl::GetShaderInfoLog(
+                    handle,
+                    len,
+                    std::ptr::null_mut(),
+                    buffer.as_mut_ptr() as *mut i8,
+                );
             }
 
             // Bail with error message

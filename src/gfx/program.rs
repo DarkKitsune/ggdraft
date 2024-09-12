@@ -44,7 +44,12 @@ impl Program {
             // Get error message
             let mut buffer = vec![0; len as usize];
             unsafe {
-                gl::GetProgramInfoLog(handle, len, std::ptr::null_mut(), buffer.as_mut_ptr() as *mut i8);
+                gl::GetProgramInfoLog(
+                    handle,
+                    len,
+                    std::ptr::null_mut(),
+                    buffer.as_mut_ptr() as *mut i8,
+                );
             }
 
             // Bail with error message
@@ -71,9 +76,7 @@ impl Program {
     /// Get the location of a uniform
     pub fn get_uniform_location(&self, name: &str) -> i32 {
         let name_cstring = CString::new(name).unwrap();
-        unsafe {
-            gl::GetUniformLocation(self.handle, name_cstring.as_ptr())
-        }
+        unsafe { gl::GetUniformLocation(self.handle, name_cstring.as_ptr()) }
     }
 }
 

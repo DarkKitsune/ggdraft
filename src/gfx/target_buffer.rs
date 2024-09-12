@@ -23,6 +23,7 @@ impl TargetBuffer {
         unsafe {
             gl::BindFramebuffer(gl::FRAMEBUFFER, self.handle);
         }
+
         // Clear the buffer.
         unsafe {
             gl::ClearColor(color.x(), color.y(), color.z(), color.w());

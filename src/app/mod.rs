@@ -1,11 +1,11 @@
-pub mod data;
 pub mod app_event;
 pub mod app_prelude;
+pub mod data;
 
+use crate::window;
 use anyhow::Result;
 use app_prelude::Gfx;
 use app_weaver::prelude::*;
-use crate::window;
 use data::Data;
 
 #[derive(Clone)]
@@ -44,9 +44,7 @@ modules! {
 pub async fn run() -> Result<()> {
     // Create the app and the app data.
     let app_data = AppData::new(Data::new());
-    let app = AppBuilder::new(app_data.clone())
-        .with_module(&Main)
-        .build();    
+    let app = AppBuilder::new(app_data.clone()).with_module(&Main).build();
     // Create the window.
     let (mut glfw, mut window, events) = window::create_window();
 
@@ -56,7 +54,11 @@ pub async fn run() -> Result<()> {
     // Run the app on a loop until the app is closed.
     loop {
         // Update the window.
-        window::handle_window_events(app.get_channel("Main", "window_channel").unwrap(), &mut glfw, &events);
+        window::handle_window_events(
+            app.get_channel("Main", "window_channel").unwrap(),
+            &mut glfw,
+            &events,
+        );
 
         // Run pre-think event
         app_event::pre_think(app_data.clone())?;

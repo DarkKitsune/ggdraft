@@ -1,5 +1,5 @@
-pub mod shader;
 pub mod program;
+pub mod shader;
 pub mod target_buffer;
 
 use std::cell::Cell;
