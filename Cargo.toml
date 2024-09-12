@@ -1,0 +1,13 @@
+[package]
+name = "ob_proj"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+glfw = "0.58.0"
+gl = "0.14.0"
+ggmath = { path = "../ggmath" }
+ggutil = { path = "../ggutil" }
+app-weaver = { path = "../app-weaver" }
+tokio = { version = "1.39.3", features = ["full"] }
+anyhow = "1.0.86"
