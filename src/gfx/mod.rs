@@ -1,6 +1,8 @@
 pub mod program;
 pub mod shader;
 pub mod target_buffer;
+pub mod vertex_layout;
+pub mod vertex_list;
 
 use std::cell::Cell;
 
