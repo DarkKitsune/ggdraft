@@ -1,7 +1,9 @@
+use std::cell::{Cell, RefCell};
+
 use anyhow::Result;
 use ggmath::prelude::*;
 
-use super::vertex_layout::{VertexComponent, VertexInput, VertexLayout};
+use super::{buffer::Buffer, vertex_layout::{VertexComponent, VertexInput, VertexLayout}};
 
 /// Represents an input for vertices going into a VertexList.
 #[derive(Debug, Clone, PartialEq)]
@@ -34,7 +36,7 @@ impl<'a> VertexListInput<'a> {
     }
 
     /// Copy the input data into the given buffer using the given stride.
-    pub fn copy_to(&self, target: &mut [f32], component_stride: usize) {
+    pub fn copy_to(&self, target: &mut [VertexComponent], component_stride: usize) {
         match self {
             VertexListInput::Position(data) => {
                 for (i, v) in data.iter().enumerate() {
@@ -76,12 +78,13 @@ impl<'a> VertexListInput<'a> {
 /// Represents a list of vertices.
 pub struct VertexList {
     layout: VertexLayout,
-    data: Vec<f32>,
+    data: Vec<VertexComponent>,
+    indices: Option<Vec<u32>>,
 }
 
 impl VertexList {
     /// Create a new vertex list.
-    pub fn new(layout: VertexLayout, inputs: &[VertexListInput]) -> Result<Self> {
+    pub fn new(layout: VertexLayout, inputs: &[VertexListInput], indices: Option<Vec<u32>>) -> Result<Self> {
         // Validate the layout first.
         layout.validate()?;
 
@@ -115,6 +118,7 @@ impl VertexList {
         Ok(Self {
             layout,
             data: Vec::new(),
+            indices,
         })
     }
     
@@ -126,5 +130,11 @@ impl VertexList {
     /// Get the layout of the vertex list.
     pub fn layout(&self) -> &VertexLayout {
         &self.layout
+    }
+
+    /// Get the indices of the vertex list.
+    /// Returns `None` if the vertex list is not indexed.
+    pub fn indices(&self) -> Option<&[u32]> {
+        self.indices.as_deref()
     }
 }

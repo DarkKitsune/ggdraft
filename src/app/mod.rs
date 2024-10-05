@@ -4,7 +4,7 @@ pub mod data;
 
 use crate::window;
 use anyhow::Result;
-use app_prelude::Gfx;
+use app_prelude::*;
 use app_weaver::prelude::*;
 use data::Data;
 
@@ -45,11 +45,17 @@ pub async fn run() -> Result<()> {
     // Create the app and the app data.
     let app_data = AppData::new(Data::new());
     let app = AppBuilder::new(app_data.clone()).with_module(&Main).build();
+
     // Create the window.
     let (mut glfw, mut window, events) = window::create_window();
 
     // Run init event
     app_event::init(app_data.clone())?;
+
+    // Run graphics init event
+    Gfx::use_cache_mut(|cache| {
+        app_event::graphics_init(app_data.clone(), cache)
+    })?;
 
     // Run the app on a loop until the app is closed.
     loop {
@@ -75,7 +81,9 @@ pub async fn run() -> Result<()> {
         app_event::post_think(app_data.clone())?;
 
         // Run render event
-        app_event::render(app_data.clone(), Gfx::get().default_framebuffer())?;
+        Gfx::use_cache_mut(|cache| {
+            app_event::render(app_data.clone(), cache, Gfx::get().default_framebuffer())
+        })?;
 
         // Swap the window frame buffers.
         window::swap_window_buffers(&mut window);

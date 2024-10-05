@@ -6,6 +6,9 @@ pub struct TargetBuffer {
     handle: u32,
 }
 
+impl !Send for TargetBuffer {}
+impl !Sync for TargetBuffer {}
+
 impl TargetBuffer {
     /// The default framebuffer.
     pub const DEFAULT: TargetBuffer = TargetBuffer { handle: 0 };

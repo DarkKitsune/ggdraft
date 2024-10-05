@@ -8,9 +8,12 @@ pub struct Shader {
     stage: ShaderStage,
 }
 
+impl !Send for Shader {}
+impl !Sync for Shader {}
+
 impl Shader {
     /// Creates a new shader
-    pub fn new(source: &str, stage: ShaderStage) -> Result<Self> {
+    pub(crate) fn __new(source: &str, stage: ShaderStage) -> Result<Self> {
         // Create shader
         let handle = unsafe { gl::CreateShader(stage.to_gl_enum()) };
 

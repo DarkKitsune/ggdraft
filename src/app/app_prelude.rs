@@ -3,7 +3,7 @@ pub use ggmath::prelude::*;
 
 pub use crate::{
     color,
-    gfx::{target_buffer::TargetBuffer, Gfx},
+    gfx::{gfx_cache::GfxCache, target_buffer::TargetBuffer, Gfx},
 };
 
 pub use super::{data::Data, AppEventResult};

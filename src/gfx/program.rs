@@ -9,9 +9,12 @@ pub struct Program {
     handle: u32,
 }
 
+impl !Send for Program {}
+impl !Sync for Program {}
+
 impl Program {
     /// Creates a new program
-    pub fn new(shaders: &[Shader]) -> Result<Self> {
+    pub(crate) fn __new(shaders: &[Shader]) -> Result<Self> {
         // Create program
         let handle = unsafe { gl::CreateProgram() };
 
