@@ -2,7 +2,7 @@ use anyhow::Result;
 use ggmath::prelude::*;
 
 use super::{
-    buffer::{Buffer, IndexBuffer, VertexBuffer},
+    buffer::{IndexBuffer, VertexBuffer},
     input_layout::{InputLayout, VERTEX_BUFFER_LOCATION},
     program::Program,
 };

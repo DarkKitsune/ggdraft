@@ -1,7 +1,4 @@
-use super::{
-    vertex_layout::{VertexComponent, VertexLayout},
-    Gfx,
-};
+use super::vertex_layout::{VertexComponent, VertexLayout};
 
 /// A buffer object that can be used to store data on the GPU.
 pub struct Buffer<T> {

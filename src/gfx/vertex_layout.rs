@@ -1,8 +1,4 @@
-use std::borrow::Cow;
-
 use anyhow::Result;
-
-use super::Gfx;
 
 // Allowed type for vertex data.
 pub type VertexComponent = f32;

@@ -12,11 +12,9 @@ use std::{
     os::raw::c_void,
 };
 
-use buffer::{IndexBuffer, VertexBuffer};
 use gfx_cache::GfxCache;
 use gl::types::{GLchar, GLenum, GLsizei, GLuint};
 use glfw::Window;
-use input_layout::{InputLayout, VERTEX_BUFFER_LOCATION};
 use target_buffer::TargetBuffer;
 
 thread_local! {
@@ -34,7 +32,7 @@ extern "system" fn debug_message_callback(
     severity: GLenum,
     length: GLsizei,
     message: *const GLchar,
-    userParam: *mut c_void,
+    _user_param: *mut c_void,
 ) {
     unsafe {
         // Convert source to a string.

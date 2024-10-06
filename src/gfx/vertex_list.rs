@@ -1,12 +1,7 @@
-use std::cell::{Cell, RefCell};
-
 use anyhow::Result;
 use ggmath::prelude::*;
 
-use super::{
-    buffer::Buffer,
-    vertex_layout::{VertexComponent, VertexInput, VertexLayout},
-};
+use super::vertex_layout::{VertexComponent, VertexInput, VertexLayout};
 
 /// Represents an input for vertices going into a VertexList.
 #[derive(Debug, Clone, PartialEq)]
