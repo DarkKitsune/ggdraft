@@ -53,9 +53,7 @@ pub async fn run() -> Result<()> {
     app_event::init(app_data.clone())?;
 
     // Run graphics init event
-    Gfx::get().use_cache_mut(|cache| {
-        app_event::graphics_init(app_data.clone(), cache)
-    })?;
+    Gfx::get().use_cache_mut(|cache| app_event::graphics_init(app_data.clone(), cache))?;
 
     // Run the app on a loop until the app is closed.
     loop {

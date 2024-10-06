@@ -1,6 +1,16 @@
-use std::{any::{Any, TypeId}, collections::HashMap};
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+};
 
-use super::{buffer::Buffer, input_layout::InputLayout, program::Program, shader::{Shader, ShaderStage}, vertex_layout::VertexLayout, vertex_list::VertexList};
+use super::{
+    buffer::Buffer,
+    input_layout::InputLayout,
+    program::Program,
+    shader::{Shader, ShaderStage},
+    vertex_layout::VertexLayout,
+    vertex_list::VertexList,
+};
 
 pub struct GfxCache {
     objects: HashMap<TypeId, HashMap<String, Box<dyn Any>>>,
@@ -21,12 +31,11 @@ impl GfxCache {
         let type_id = TypeId::of::<T>();
 
         // Get the hashmap for the type id
-        let map = self.objects
-            .entry(type_id)
-            .or_insert_with(HashMap::new);
+        let map = self.objects.entry(type_id).or_insert_with(HashMap::new);
 
         // Insert the value into the hashmap
-        map.insert(key.into(), Box::new(value)).and_then(|v| v.downcast().ok())
+        map.insert(key.into(), Box::new(value))
+            .and_then(|v| v.downcast().ok())
             .map(|v| *v)
     }
 
@@ -43,7 +52,12 @@ impl GfxCache {
     }
 
     /// Create a new program in the cache.
-    pub fn create_program_vertex_fragment(&mut self, key: impl Into<String>, vertex_shader: &str, fragment_shader: &str) {
+    pub fn create_program_vertex_fragment(
+        &mut self,
+        key: impl Into<String>,
+        vertex_shader: &str,
+        fragment_shader: &str,
+    ) {
         let vertex_shader = Shader::__new(vertex_shader, ShaderStage::Vertex).unwrap();
         let fragment_shader = Shader::__new(fragment_shader, ShaderStage::Fragment).unwrap();
         let program = Program::__new(&[vertex_shader, fragment_shader]).unwrap();
@@ -57,10 +71,14 @@ impl GfxCache {
         self.insert(key, program);
     }
 
-    /// Create a new vertex array in the cache from the given vertex layout.
-    pub fn create_vertex_array_from_vertex_layout(&mut self, key: impl Into<String>, vertex_layout: VertexLayout) {
-        let vertex_array = InputLayout::__from_vertex_layout(vertex_layout);
-        self.insert(key, vertex_array);
+    /// Create a new input layout in the cache from the given vertex layout.
+    pub fn create_input_layout_from_vertex_layout(
+        &mut self,
+        key: impl Into<String>,
+        vertex_layout: VertexLayout,
+    ) {
+        let input_layout = InputLayout::__from_vertex_layout(vertex_layout);
+        self.insert(key, input_layout);
     }
 
     /// Get an object from the cache.
@@ -85,7 +103,6 @@ impl GfxCache {
         let map = self.objects.get_mut(&type_id)?;
 
         // Remove the value from the hashmap
-        map.remove(key).and_then(|v| v.downcast().ok())
-            .map(|v| *v)
+        map.remove(key).and_then(|v| v.downcast().ok()).map(|v| *v)
     }
 }

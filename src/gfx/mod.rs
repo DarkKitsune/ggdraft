@@ -1,13 +1,16 @@
+pub mod buffer;
 pub mod gfx_cache;
+pub mod input_layout;
 pub mod program;
 pub mod shader;
 pub mod target_buffer;
 pub mod vertex_layout;
 pub mod vertex_list;
-pub mod input_layout;
-pub mod buffer;
 
-use std::{cell::{Cell, RefCell}, os::raw::c_void};
+use std::{
+    cell::{Cell, RefCell},
+    os::raw::c_void,
+};
 
 use buffer::{IndexBuffer, VertexBuffer};
 use gfx_cache::GfxCache;
@@ -31,7 +34,7 @@ extern "system" fn debug_message_callback(
     severity: GLenum,
     length: GLsizei,
     message: *const GLchar,
-    userParam: *mut c_void
+    userParam: *mut c_void,
 ) {
     unsafe {
         // Convert source to a string.
@@ -73,7 +76,10 @@ extern "system" fn debug_message_callback(
         let message = std::str::from_utf8_unchecked(message);
 
         // Decorate the message with the source, error type, id, and severity.
-        let message = format!("{}: {}: {}: {}: {}", source, error_type, id, severity, message);
+        let message = format!(
+            "{}: {}: {}: {}: {}",
+            source, error_type, id, severity, message
+        );
 
         // Print the message.
         if should_panic {
@@ -102,16 +108,23 @@ impl Gfx {
             if gfx.get().is_some() {
                 panic!("Graphics controller has already been initialized.");
             }
-            
+
             // Load the OpenGL function pointers.
             gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
-            
+
             // Enable debug output.
             unsafe {
                 gl::Enable(gl::DEBUG_OUTPUT);
                 gl::Enable(gl::DEBUG_OUTPUT_SYNCHRONOUS);
                 gl::DebugMessageCallback(Some(debug_message_callback), std::ptr::null());
-                gl::DebugMessageControl(gl::DONT_CARE, gl::DONT_CARE, gl::DONT_CARE, 0, std::ptr::null(), gl::TRUE);
+                gl::DebugMessageControl(
+                    gl::DONT_CARE,
+                    gl::DONT_CARE,
+                    gl::DONT_CARE,
+                    0,
+                    std::ptr::null(),
+                    gl::TRUE,
+                );
             }
 
             // Initialize the graphics controller.

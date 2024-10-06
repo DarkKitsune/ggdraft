@@ -26,12 +26,12 @@ impl VertexInput {
             VertexInput::TexCoord => 2,
         }
     }
-    
+
     /// Get the byte size of this input.
     pub fn byte_size(&self) -> usize {
         self.component_count() * std::mem::size_of::<VertexComponent>()
     }
-    
+
     /// Get the name of this input for shader generation.
     /// Returns a `String` because this may support custom inputs in the future.
     pub fn shader_name(&self) -> String {
@@ -75,7 +75,10 @@ impl VertexLayout {
 
     /// Push multiple inputs to the layout.
     pub fn push_many(&mut self, inputs: Vec<VertexInput>) {
-        self.component_stride += inputs.iter().map(|input| input.component_count()).sum::<usize>();
+        self.component_stride += inputs
+            .iter()
+            .map(|input| input.component_count())
+            .sum::<usize>();
         self.inputs.extend(inputs);
     }
 

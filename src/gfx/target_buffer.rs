@@ -1,7 +1,11 @@
 use anyhow::Result;
 use ggmath::prelude::*;
 
-use super::{buffer::{Buffer, IndexBuffer, VertexBuffer}, program::Program, input_layout::{InputLayout, VERTEX_BUFFER_LOCATION}};
+use super::{
+    buffer::{Buffer, IndexBuffer, VertexBuffer},
+    input_layout::{InputLayout, VERTEX_BUFFER_LOCATION},
+    program::Program,
+};
 
 /// Represents a GL buffer for rendering to.
 // TODO: Make it support other types of buffers besides framebuffers.
@@ -38,7 +42,14 @@ impl TargetBuffer {
     }
 
     /// Render triangles to the buffer using the given vertices.
-    pub fn render_triangles(&self, program: &Program, vertex_buffer: &VertexBuffer, index_buffer: &IndexBuffer, input_layout: &InputLayout, index_count: usize) -> Result<()> {
+    pub fn render_triangles(
+        &self,
+        program: &Program,
+        vertex_buffer: &VertexBuffer,
+        index_buffer: &IndexBuffer,
+        input_layout: &InputLayout,
+        index_count: usize,
+    ) -> Result<()> {
         // Return early if index_count == 0.
         if index_count == 0 {
             return Ok(());
@@ -59,14 +70,24 @@ impl TargetBuffer {
             // Bind this target buffer.
             gl::BindFramebuffer(gl::FRAMEBUFFER, self.handle);
             gl::BindVertexArray(input_layout.vertex_array_handle());
-            gl::BindVertexBuffer(VERTEX_BUFFER_LOCATION, vertex_buffer.handle(), 0, input_layout.byte_stride() as i32);
+            gl::BindVertexBuffer(
+                VERTEX_BUFFER_LOCATION,
+                vertex_buffer.handle(),
+                0,
+                input_layout.byte_stride() as i32,
+            );
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, index_buffer.handle());
 
             // Use the program.
             gl::UseProgram(program.handle());
 
             // Draw call.
-            gl::DrawElements(gl::TRIANGLES, index_count as i32, gl::UNSIGNED_INT, std::ptr::null());
+            gl::DrawElements(
+                gl::TRIANGLES,
+                index_count as i32,
+                gl::UNSIGNED_INT,
+                std::ptr::null(),
+            );
 
             // Stop using the program.
             gl::UseProgram(0);

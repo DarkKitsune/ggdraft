@@ -1,4 +1,7 @@
-use super::{vertex_layout::{VertexComponent, VertexLayout}, Gfx};
+use super::{
+    vertex_layout::{VertexComponent, VertexLayout},
+    Gfx,
+};
 
 /// A buffer object that can be used to store data on the GPU.
 pub struct Buffer<T> {
@@ -21,7 +24,6 @@ impl<T> Buffer<T> {
         let length = data.len();
 
         unsafe {
-
             // Generate a buffer
             gl::GenBuffers(1, &mut handle);
 
@@ -37,10 +39,20 @@ impl<T> Buffer<T> {
 
             // Set the buffer's label
             let label = format!("Buffer<{}>", std::any::type_name::<T>());
-            gl::ObjectLabel(gl::BUFFER, handle, label.len() as i32, label.as_ptr() as *const _);
+            gl::ObjectLabel(
+                gl::BUFFER,
+                handle,
+                label.len() as i32,
+                label.as_ptr() as *const _,
+            );
         }
 
-        Self { handle, length, vertex_layout, _phantom: std::marker::PhantomData }
+        Self {
+            handle,
+            length,
+            vertex_layout,
+            _phantom: std::marker::PhantomData,
+        }
     }
 
     /// Get the length of the buffer.

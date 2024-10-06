@@ -5,8 +5,9 @@ use super::{buffer::VertexBuffer, vertex_layout::VertexLayout};
 // The location the vertex buffer should be bound to.
 pub(crate) const VERTEX_BUFFER_LOCATION: u32 = 0;
 // The location the instance buffer should be bound to.
-pub(crate) const INSTANCE_BUFFER_LOCATION: u32 = 1;
+pub(crate) const _INSTANCE_BUFFER_LOCATION: u32 = 1;
 
+/// Layout describing a set of vertex and instance inputs for rendering.
 pub struct InputLayout {
     layout: VertexLayout,
     handle: u32,
@@ -29,14 +30,21 @@ impl InputLayout {
             let mut offset = 0;
             for (index, input) in layout.inputs().iter().enumerate() {
                 gl::EnableVertexArrayAttrib(handle, index as u32);
-                gl::VertexArrayAttribFormat(handle, index as u32, input.component_count() as i32, gl::FLOAT, gl::FALSE, offset as u32);
+                gl::VertexArrayAttribFormat(
+                    handle,
+                    index as u32,
+                    input.component_count() as i32,
+                    gl::FLOAT,
+                    gl::FALSE,
+                    offset as u32,
+                );
                 gl::VertexArrayAttribBinding(handle, index as u32, VERTEX_BUFFER_LOCATION);
                 gl::VertexArrayBindingDivisor(handle, index as u32, 0);
                 offset += input.component_count() * std::mem::size_of::<f32>();
             }
         }
 
-        Self { layout,  handle }
+        Self { layout, handle }
     }
 
     /// Get the GL handle.

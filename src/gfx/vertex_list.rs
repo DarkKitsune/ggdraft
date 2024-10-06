@@ -3,7 +3,10 @@ use std::cell::{Cell, RefCell};
 use anyhow::Result;
 use ggmath::prelude::*;
 
-use super::{buffer::Buffer, vertex_layout::{VertexComponent, VertexInput, VertexLayout}};
+use super::{
+    buffer::Buffer,
+    vertex_layout::{VertexComponent, VertexInput, VertexLayout},
+};
 
 /// Represents an input for vertices going into a VertexList.
 #[derive(Debug, Clone, PartialEq)]
@@ -41,7 +44,7 @@ impl<'a> VertexListInput<'a> {
             VertexListInput::Position(data) => {
                 for (i, v) in data.iter().enumerate() {
                     let offset = i * component_stride;
-                    
+
                     target[offset] = v.x();
                     target[offset + 1] = v.y();
                     target[offset + 2] = v.z();
@@ -84,7 +87,11 @@ pub struct VertexList {
 
 impl VertexList {
     /// Create a new vertex list.
-    pub fn new(layout: VertexLayout, inputs: &[VertexListInput], indices: Option<Vec<u32>>) -> Result<Self> {
+    pub fn new(
+        layout: VertexLayout,
+        inputs: &[VertexListInput],
+        indices: Option<Vec<u32>>,
+    ) -> Result<Self> {
         // Validate the layout first.
         layout.validate()?;
 
@@ -114,14 +121,14 @@ impl VertexList {
             // Move the data offset.
             data_offset += layout_input.component_count();
         }
-        
+
         Ok(Self {
             layout,
             data,
             indices,
         })
     }
-    
+
     /// Get the data within the vertex list.
     pub fn data(&self) -> &[VertexComponent] {
         &self.data
