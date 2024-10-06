@@ -53,7 +53,7 @@ pub async fn run() -> Result<()> {
     app_event::init(app_data.clone())?;
 
     // Run graphics init event
-    Gfx::use_cache_mut(|cache| {
+    Gfx::get().use_cache_mut(|cache| {
         app_event::graphics_init(app_data.clone(), cache)
     })?;
 
@@ -81,7 +81,7 @@ pub async fn run() -> Result<()> {
         app_event::post_think(app_data.clone())?;
 
         // Run render event
-        Gfx::use_cache_mut(|cache| {
+        Gfx::get().use_cache_mut(|cache| {
             app_event::render(app_data.clone(), cache, Gfx::get().default_framebuffer())
         })?;
 

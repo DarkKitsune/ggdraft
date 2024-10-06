@@ -2,7 +2,40 @@ use std::ffi::CString;
 
 use anyhow::Result;
 
-use super::shader::Shader;
+use super::shader::{Shader, ShaderStage};
+
+/// Default shader source for a vertex shader
+const DEFAULT_VERTEX_SHADER: &str = r#"
+#version 450 core
+
+layout(location = 0) in vec3 input_position;
+layout(location = 1) in vec4 input_color;
+
+layout(location = 0) out vec4 output_color;
+
+out gl_PerVertex {
+    vec4 gl_Position;
+    float gl_PointSize;
+};
+
+void main() {
+    gl_Position = vec4(input_position, 1.0);
+    output_color = input_color;
+}
+"#;
+
+/// Default shader source for a fragment shader
+const DEFAULT_FRAGMENT_SHADER: &str = r#"
+#version 450 core
+
+layout(location = 0) in vec4 input_color;
+
+out vec4 output_color;
+
+void main() {
+    output_color = input_color;
+}
+"#;
 
 /// Represents a GL program
 pub struct Program {
@@ -69,11 +102,17 @@ impl Program {
         Ok(Self { handle })
     }
 
-    /// Use this program
-    pub fn use_program(&self) {
-        unsafe {
-            gl::UseProgram(self.handle);
-        }
+    /// Create a new program with default shaders.
+    /// The only vertex inputs are position and color.
+    pub(crate) fn __new_default() -> Result<Self> {
+        let vertex_shader = Shader::__new(DEFAULT_VERTEX_SHADER, ShaderStage::Vertex)?;
+        let fragment_shader = Shader::__new(DEFAULT_FRAGMENT_SHADER, ShaderStage::Fragment)?;
+        Self::__new(&[vertex_shader, fragment_shader])
+    }
+
+    /// Get the GL handle
+    pub fn handle(&self) -> u32 {
+        self.handle
     }
 
     /// Get the location of a uniform

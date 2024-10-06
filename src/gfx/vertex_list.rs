@@ -117,7 +117,7 @@ impl VertexList {
         
         Ok(Self {
             layout,
-            data: Vec::new(),
+            data,
             indices,
         })
     }
