@@ -1,5 +1,6 @@
 use anyhow::Result;
-use ggmath::prelude::Vector4;
+
+use crate::gfx::shader::ShaderStage;
 
 use super::{shader_expression::ShaderExpression, shader_type::ShaderType};
 
@@ -44,35 +45,54 @@ impl ShaderOutput {
 /// Call `ShaderOutputs::set` to set the expression for an output.
 pub struct ShaderOutputs {
     outputs: Vec<ShaderOutput>,
-    is_vertex: bool,
-    vertex_position: Option<ShaderExpression>
+    stage: ShaderStage,
+    vertex_position: Option<ShaderExpression>,
+    fragment_color: Option<ShaderExpression>,
 }
 
 impl ShaderOutputs {
-    pub(crate) fn new(is_vertex: bool) -> Self {
+    pub(crate) fn new(stage: ShaderStage) -> Self {
         Self {
             outputs: Vec::new(),
-            is_vertex,
+            stage,
             vertex_position: None,
+            fragment_color: None,
         }
     }
 
-    pub fn output(&self, name: &str) -> Option<&ShaderOutput> {
-        self.outputs.iter().find(|output| output.name() == name)
+    pub fn output(&self, name: impl AsRef<str>) -> Option<&ShaderOutput> {
+        self.outputs
+            .iter()
+            .find(|output| output.name() == name.as_ref())
     }
 
-    fn output_mut(&mut self, name: &str) -> Option<&mut ShaderOutput> {
-        self.outputs.iter_mut().find(|output| output.name() == name)
+    fn output_mut(&mut self, name: impl AsRef<str>) -> Option<&mut ShaderOutput> {
+        self.outputs
+            .iter_mut()
+            .find(|output| output.name() == name.as_ref())
     }
 
     /// Set the expression for the output with the given name.
     /// If the output does not exist, it will be created.
-    pub fn set(&mut self, name: &str, expression: impl Into<ShaderExpression>) -> Result<()> {
+    pub fn set(
+        &mut self,
+        name: impl AsRef<str>,
+        expression: impl Into<ShaderExpression>,
+    ) -> Result<()> {
+        let name = name.as_ref();
         let expression = expression.into();
         if let Some(output) = self.output_mut(name) {
             output.expression = Some(expression);
         } else {
-            let output = ShaderOutput::new(name, expression.shader_type()?, self.outputs.len());
+            // Location is the index of the output in the list.
+            // If this is a fragment shader, then add 1 to the location to account for the color output.
+            let location = self.outputs.len()
+                + if self.stage == ShaderStage::Fragment {
+                    1
+                } else {
+                    0
+                };
+            let output = ShaderOutput::new(name, expression.shader_type()?, location);
             self.outputs.push(output);
             self.set(name, expression)?;
         }
@@ -80,19 +100,33 @@ impl ShaderOutputs {
     }
 
     /// Set the expression for the vertex position output.
-    /// Returns an error if this is not a vertex shader.
-    pub fn set_vertex_position(&mut self, expression: ShaderExpression) -> Result<()> {
-        if self.is_vertex {
-            self.vertex_position = Some(expression);
-            Ok(())
-        } else {
-            Err(anyhow::anyhow!("Cannot set vertex position outside of a vertex shader"))
+    pub fn set_vertex_position(&mut self, expression: ShaderExpression) {
+        // Panic if this is not a vertex shader.
+        if self.stage != ShaderStage::Vertex {
+            panic!("Cannot set vertex position in a non-vertex shader");
         }
+
+        self.vertex_position = Some(expression);
+    }
+
+    /// Set the expression for the fragment color output.
+    pub fn set_fragment_color(&mut self, expression: ShaderExpression) {
+        // Panic if this is not a fragment shader.
+        if self.stage != ShaderStage::Fragment {
+            panic!("Cannot set fragment color in a non-fragment shader");
+        }
+
+        self.fragment_color = Some(expression);
     }
 
     /// Get the expression for the vertex position output.
     pub fn vertex_position(&self) -> Option<&ShaderExpression> {
         self.vertex_position.as_ref()
+    }
+
+    /// Get the expression for the fragment color output.
+    pub fn fragment_color(&self) -> Option<&ShaderExpression> {
+        self.fragment_color.as_ref()
     }
 
     /// Iterate over the outputs.

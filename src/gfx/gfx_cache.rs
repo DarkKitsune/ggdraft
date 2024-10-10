@@ -6,7 +6,13 @@ use std::{
 use anyhow::Result;
 
 use super::{
-    buffer::Buffer, input_layout::{self, InputLayout}, program::Program, shader::{Shader, ShaderStage}, shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs}, vertex_layout::VertexLayout, vertex_list::VertexList
+    buffer::Buffer,
+    input_layout::InputLayout,
+    program::Program,
+    shader::{Shader, ShaderStage},
+    shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs},
+    vertex_layout::VertexLayout,
+    vertex_list::VertexList,
 };
 
 pub struct GfxCache {
@@ -58,10 +64,15 @@ impl GfxCache {
         fragment: impl FnOnce(&ShaderInputs, &mut ShaderOutputs) -> Result<()>,
     ) -> Result<()> {
         // Get the input layout from the cache
-        let input_layout = self.get::<InputLayout>(input_layout_key.as_ref()).ok_or_else(|| anyhow::anyhow!("Input layout not found: {}", input_layout_key.as_ref()))?;
+        let input_layout = self
+            .get::<InputLayout>(input_layout_key.as_ref())
+            .ok_or_else(|| {
+                anyhow::anyhow!("Input layout not found: {}", input_layout_key.as_ref())
+            })?;
 
         // Generate the vertex and fragment shaders
-        let (vertex_code, fragment_code) = input_layout.generate_vertex_fragment_shaders(vertex, fragment)?;
+        let (vertex_code, fragment_code) =
+            input_layout.generate_vertex_fragment_shaders(vertex, fragment)?;
         let vertex_shader = Shader::__new(ShaderStage::Vertex, &vertex_code)?;
         let fragment_shader = Shader::__new(ShaderStage::Fragment, &fragment_code)?;
 

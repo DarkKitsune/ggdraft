@@ -52,25 +52,25 @@ pub fn graphics_init(
     graphics_cache.create_program_vertex_fragment(
         // Name of the program
         "program",
-        
         // Name of the input layout to use
         "input layout",
-
         // Vertex shader
-        |input: &ShaderInputs, output: &mut ShaderOutputs| {
+        |input, output| {
             // Set the vertex position to the input position
-            output.set_vertex_position(input.get("position")?.append(1.0))?;
+            output.set_vertex_position(input.get(VertexInput::Position)?.append(1.0));
 
             // Set the color to the input color, or white if no color is provided
-            output.set("color", input.get("color").unwrap_or(WHITE.into()))?;
+            output.set(
+                "color",
+                input.get(VertexInput::Color).unwrap_or(WHITE.into()),
+            )?;
 
             Ok(())
         },
-
         // Fragment shader
-        |input: &ShaderInputs, output: &mut ShaderOutputs| {
+        |input, output| {
             // Set the output color to the input color
-            output.set("color", input.get("color")?)?;
+            output.set_fragment_color(input.get("color")?);
 
             Ok(())
         },

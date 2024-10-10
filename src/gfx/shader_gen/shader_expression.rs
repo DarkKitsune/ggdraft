@@ -12,7 +12,12 @@ pub enum ShaderOperation {
     F32(f32),
     Vec2(ShaderExpression, ShaderExpression),
     Vec3(ShaderExpression, ShaderExpression, ShaderExpression),
-    Vec4(ShaderExpression, ShaderExpression, ShaderExpression, ShaderExpression),
+    Vec4(
+        ShaderExpression,
+        ShaderExpression,
+        ShaderExpression,
+        ShaderExpression,
+    ),
     Append(ShaderExpression, ShaderExpression),
     Add(ShaderExpression, ShaderExpression),
     Sub(ShaderExpression, ShaderExpression),
@@ -58,37 +63,58 @@ impl ShaderExpression {
             ShaderOperation::Vec2(_, _) => ShaderType::Vec2,
             ShaderOperation::Vec3(_, _, _) => ShaderType::Vec3,
             ShaderOperation::Vec4(_, _, _, _) => ShaderType::Vec4,
-            ShaderOperation::Append(left, right) => {
-                match left.shader_type()? {
-                    ShaderType::I32 | ShaderType::F32 => match right.shader_type()? {
-                        ShaderType::I32 | ShaderType::F32 => ShaderType::Vec2,
-                        ShaderType::Vec2 => ShaderType::Vec3,
-                        ShaderType::Vec3 => ShaderType::Vec4,
-                        right => return Err(anyhow::anyhow!("Right side of append operation has wrong type: {:?}", right)),
+            ShaderOperation::Append(left, right) => match left.shader_type()? {
+                ShaderType::I32 | ShaderType::F32 => match right.shader_type()? {
+                    ShaderType::I32 | ShaderType::F32 => ShaderType::Vec2,
+                    ShaderType::Vec2 => ShaderType::Vec3,
+                    ShaderType::Vec3 => ShaderType::Vec4,
+                    right => {
+                        return Err(anyhow::anyhow!(
+                            "Right side of append operation has wrong type: {:?}",
+                            right
+                        ))
                     }
-                    ShaderType::Vec2 => match right.shader_type()? {
-                        ShaderType::I32 | ShaderType::F32 => ShaderType::Vec3,
-                        ShaderType::Vec2 => ShaderType::Vec4,
-                        right => return Err(anyhow::anyhow!("Right side of append operation has wrong type: {:?}", right)),
+                },
+                ShaderType::Vec2 => match right.shader_type()? {
+                    ShaderType::I32 | ShaderType::F32 => ShaderType::Vec3,
+                    ShaderType::Vec2 => ShaderType::Vec4,
+                    right => {
+                        return Err(anyhow::anyhow!(
+                            "Right side of append operation has wrong type: {:?}",
+                            right
+                        ))
                     }
-                    ShaderType::Vec3 => match right.shader_type()? {
-                        ShaderType::I32 | ShaderType::F32 => ShaderType::Vec4,
-                        right => return Err(anyhow::anyhow!("Right side of append operation has wrong type: {:?}", right)),
+                },
+                ShaderType::Vec3 => match right.shader_type()? {
+                    ShaderType::I32 | ShaderType::F32 => ShaderType::Vec4,
+                    right => {
+                        return Err(anyhow::anyhow!(
+                            "Right side of append operation has wrong type: {:?}",
+                            right
+                        ))
                     }
-                    left => return Err(anyhow::anyhow!("Left side of append operation has wrong type: {:?}", left)),
+                },
+                left => {
+                    return Err(anyhow::anyhow!(
+                        "Left side of append operation has wrong type: {:?}",
+                        left
+                    ))
                 }
             },
             ShaderOperation::Add(left, _) => left.shader_type()?,
             ShaderOperation::Sub(left, _) => left.shader_type()?,
-            ShaderOperation::Mul(left, right) => {
-                match left.shader_type()? {
-                    ShaderType::Mat4 => match right.shader_type()? {
-                        ShaderType::Vec4 => ShaderType::Vec4,
-                        ShaderType::Mat4 => ShaderType::Mat4,
-                        right => return Err(anyhow::anyhow!("Right side of mul operation has wrong type: {:?}", right)),
+            ShaderOperation::Mul(left, right) => match left.shader_type()? {
+                ShaderType::Mat4 => match right.shader_type()? {
+                    ShaderType::Vec4 => ShaderType::Vec4,
+                    ShaderType::Mat4 => ShaderType::Mat4,
+                    right => {
+                        return Err(anyhow::anyhow!(
+                            "Right side of mul operation has wrong type: {:?}",
+                            right
+                        ))
                     }
-                    left => left,
-                }
+                },
+                left => left,
             },
             ShaderOperation::Div(left, _) => left.shader_type()?,
             ShaderOperation::Pow(left, _) => left.shader_type()?,
@@ -256,7 +282,6 @@ impl std::ops::Mul<f32> for ShaderExpression {
     }
 }
 
-
 impl std::ops::Div<f32> for ShaderExpression {
     type Output = ShaderExpression;
 
@@ -387,7 +412,11 @@ pub trait ShaderMath: Into<ShaderExpression> + Sized {
         other: impl Into<ShaderExpression>,
         factor: impl Into<ShaderExpression>,
     ) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Mix(self.into(), other.into(), factor.into()))
+        ShaderExpression::new(ShaderOperation::Mix(
+            self.into(),
+            other.into(),
+            factor.into(),
+        ))
     }
 }
 
@@ -421,7 +450,7 @@ impl ShaderVector for Vector3<i32> {}
 impl ShaderVector for Vector4<f32> {}
 impl ShaderVector for Vector4<i32> {}
 
-impl Display for ShaderExpression  {
+impl Display for ShaderExpression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &*self.operation.borrow() {
             ShaderOperation::Input(name, _) => write!(f, "{}{}", SHADER_INPUT_PREFIX, name),
@@ -450,8 +479,12 @@ impl Display for ShaderExpression  {
             ShaderOperation::Round(expr) => write!(f, "round({})", expr),
             ShaderOperation::Min(left, right) => write!(f, "min({}, {})", left, right),
             ShaderOperation::Max(left, right) => write!(f, "max({}, {})", left, right),
-            ShaderOperation::Clamp(left, min, max) => write!(f, "clamp({}, {}, {})", left, min, max),
-            ShaderOperation::Mix(left, right, factor) => write!(f, "mix({}, {}, {})", left, right, factor),
+            ShaderOperation::Clamp(left, min, max) => {
+                write!(f, "clamp({}, {}, {})", left, min, max)
+            }
+            ShaderOperation::Mix(left, right, factor) => {
+                write!(f, "mix({}, {}, {})", left, right, factor)
+            }
             ShaderOperation::Dot(left, right) => write!(f, "dot({}, {})", left, right),
             ShaderOperation::Cross(left, right) => write!(f, "cross({}, {})", left, right),
             ShaderOperation::Length(expr) => write!(f, "length({})", expr),

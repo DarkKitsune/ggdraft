@@ -1,6 +1,9 @@
 use anyhow::Result;
 
-use super::shader_gen::{shader_inputs::{ShaderInput, SHADER_INPUT_PREFIX}, shader_type::ShaderType};
+use super::shader_gen::{
+    shader_inputs::{ShaderInput, SHADER_INPUT_PREFIX},
+    shader_type::ShaderType,
+};
 
 // Allowed type for vertex data.
 pub type VertexComponent = f32;
@@ -51,8 +54,17 @@ impl VertexInput {
     }
 
     /// Create a shader input from this vertex input.
-    pub fn to_shader_input(&self, location: usize) -> super::shader_gen::shader_inputs::ShaderInput {
+    pub fn to_shader_input(
+        &self,
+        location: usize,
+    ) -> super::shader_gen::shader_inputs::ShaderInput {
         ShaderInput::new(self.name(), self.shader_type(), location)
+    }
+}
+
+impl AsRef<str> for VertexInput {
+    fn as_ref(&self) -> &str {
+        self.name()
     }
 }
 

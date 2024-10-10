@@ -1,6 +1,9 @@
 use anyhow::Result;
 
-use super::{shader_expression::{ShaderExpression, ShaderOperation}, shader_type::ShaderType};
+use super::{
+    shader_expression::{ShaderExpression, ShaderOperation},
+    shader_type::ShaderType,
+};
 
 pub(crate) const SHADER_INPUT_PREFIX: &str = "input_";
 
@@ -39,26 +42,29 @@ impl ShaderInput {
 }
 
 /// The inputs for a shader stage during shader generation.
-pub struct ShaderInputs {    
+pub struct ShaderInputs {
     inputs: Vec<ShaderInput>,
 }
 
 impl ShaderInputs {
     /// Create a new set of shader inputs.
     pub(crate) fn with_inputs(inputs: Vec<ShaderInput>) -> Self {
-        Self {
-            inputs,
-        }
+        Self { inputs }
     }
 
     /// Get the input with the given name.
-    pub fn input(&self, name: &str) -> Option<&ShaderInput> {
-        self.inputs.iter().find(|input| input.name() == name)
+    pub fn input(&self, name: impl AsRef<str>) -> Option<&ShaderInput> {
+        self.inputs
+            .iter()
+            .find(|input| input.name() == name.as_ref())
     }
 
     /// Get the input with the given name as a shader expression.
-    pub fn get(&self, name: &str) -> Result<ShaderExpression> {
-        self.input(name).map(|input| input.to_expression()).ok_or_else(|| anyhow::anyhow!("Input not found: {}", name))
+    pub fn get(&self, name: impl AsRef<str>) -> Result<ShaderExpression> {
+        let name = name.as_ref();
+        self.input(name)
+            .map(|input| input.to_expression())
+            .ok_or_else(|| anyhow::anyhow!("Input not found: {}", name))
     }
 
     /// Get an iterator over the inputs.

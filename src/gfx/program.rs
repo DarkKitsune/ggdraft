@@ -2,40 +2,7 @@ use std::ffi::CString;
 
 use anyhow::Result;
 
-use super::shader::{Shader, ShaderStage};
-
-/// Default shader source for a vertex shader
-const DEFAULT_VERTEX_SHADER: &str = r#"
-#version 450 core
-
-layout(location = 0) in vec3 input_position;
-layout(location = 1) in vec4 input_color;
-
-layout(location = 0) out vec4 output_color;
-
-out gl_PerVertex {
-    vec4 gl_Position;
-    float gl_PointSize;
-};
-
-void main() {
-    gl_Position = vec4(input_position, 1.0);
-    output_color = input_color;
-}
-"#;
-
-/// Default shader source for a fragment shader
-const DEFAULT_FRAGMENT_SHADER: &str = r#"
-#version 450 core
-
-layout(location = 0) in vec4 input_color;
-
-out vec4 output_color;
-
-void main() {
-    output_color = input_color;
-}
-"#;
+use super::shader::Shader;
 
 /// Represents a GL program
 pub struct Program {
