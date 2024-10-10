@@ -120,7 +120,7 @@ impl InputLayout {
                     input
                 })
                 .collect(),
-        );
+        )?;
 
         // Create the shader outputs.
         let mut outputs = ShaderOutputs::new(ShaderStage::Vertex);
@@ -196,7 +196,7 @@ impl InputLayout {
                     )
                 })
                 .collect(),
-        );
+        ).map_err(|e| anyhow::anyhow!("Failed to link fragment inputs to vertex outputs: {}", e))?;
 
         Ok((code, fragment_inputs))
     }

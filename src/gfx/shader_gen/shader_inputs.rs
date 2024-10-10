@@ -48,8 +48,20 @@ pub struct ShaderInputs {
 
 impl ShaderInputs {
     /// Create a new set of shader inputs.
-    pub(crate) fn with_inputs(inputs: Vec<ShaderInput>) -> Self {
-        Self { inputs }
+    /// Returns an error if the inputs are empty or if there are duplicate names.
+    pub(crate) fn with_inputs(inputs: Vec<ShaderInput>) -> Result<Self> {
+        // Check for duplicate names
+        let mut names = std::collections::HashSet::new();
+        for input in &inputs {
+            if !names.insert(input.name()) {
+                return Err(anyhow::anyhow!("Duplicate input: {}", input.name()));
+            }
+        }
+        // Check for empty inputs
+        if inputs.is_empty() {
+            return Err(anyhow::anyhow!("No inputs provided"));
+        }
+        Ok(Self { inputs })
     }
 
     /// Get the input with the given name.

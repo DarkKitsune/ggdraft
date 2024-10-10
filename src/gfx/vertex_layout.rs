@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use super::shader_gen::{
-    shader_inputs::{ShaderInput, SHADER_INPUT_PREFIX},
+    shader_inputs::ShaderInput,
     shader_type::ShaderType,
 };
 
