@@ -1,5 +1,7 @@
 use anyhow::Result;
 
+use super::shader_gen::{shader_inputs::{ShaderInput, SHADER_INPUT_PREFIX}, shader_type::ShaderType};
+
 // Allowed type for vertex data.
 pub type VertexComponent = f32;
 
@@ -28,15 +30,29 @@ impl VertexInput {
         self.component_count() * std::mem::size_of::<VertexComponent>()
     }
 
-    /// Get the name of this input for shader generation.
-    /// Returns a `String` because this may support custom inputs in the future.
-    pub fn shader_name(&self) -> String {
+    /// Get the name of this input.
+    pub fn name(&self) -> &str {
         match self {
-            VertexInput::Position => "input_position".to_string(),
-            VertexInput::Normal => "input_normal".to_string(),
-            VertexInput::Color => "input_color".to_string(),
-            VertexInput::TexCoord => "input_tex_coord".to_string(),
+            VertexInput::Position => "position",
+            VertexInput::Normal => "normal",
+            VertexInput::Color => "color",
+            VertexInput::TexCoord => "tex_coord",
         }
+    }
+
+    /// Get the corresponding shader type of this input.
+    pub fn shader_type(&self) -> ShaderType {
+        match self {
+            VertexInput::Position => ShaderType::Vec3,
+            VertexInput::Normal => ShaderType::Vec3,
+            VertexInput::Color => ShaderType::Vec4,
+            VertexInput::TexCoord => ShaderType::Vec2,
+        }
+    }
+
+    /// Create a shader input from this vertex input.
+    pub fn to_shader_input(&self, location: usize) -> super::shader_gen::shader_inputs::ShaderInput {
+        ShaderInput::new(self.name(), self.shader_type(), location)
     }
 }
 

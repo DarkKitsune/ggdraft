@@ -3,13 +3,10 @@ use std::{
     collections::HashMap,
 };
 
+use anyhow::Result;
+
 use super::{
-    buffer::Buffer,
-    input_layout::InputLayout,
-    program::Program,
-    shader::{Shader, ShaderStage},
-    vertex_layout::VertexLayout,
-    vertex_list::VertexList,
+    buffer::Buffer, input_layout::{self, InputLayout}, program::Program, shader::{Shader, ShaderStage}, shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs}, vertex_layout::VertexLayout, vertex_list::VertexList
 };
 
 pub struct GfxCache {
@@ -51,24 +48,30 @@ impl GfxCache {
         self.insert(key, buffer);
     }
 
-    /// Create a new program in the cache.
+    /// Create a new program in the cache using the given input layout.
+    /// The program's vertex and fragment shaders are generated using the callbacks.
     pub fn create_program_vertex_fragment(
         &mut self,
         key: impl Into<String>,
-        vertex_shader: &str,
-        fragment_shader: &str,
-    ) {
-        let vertex_shader = Shader::__new(vertex_shader, ShaderStage::Vertex).unwrap();
-        let fragment_shader = Shader::__new(fragment_shader, ShaderStage::Fragment).unwrap();
-        let program = Program::__new(&[vertex_shader, fragment_shader]).unwrap();
-        self.insert(key, program);
-    }
+        input_layout_key: impl AsRef<str>,
+        vertex: impl FnOnce(&ShaderInputs, &mut ShaderOutputs) -> Result<()>,
+        fragment: impl FnOnce(&ShaderInputs, &mut ShaderOutputs) -> Result<()>,
+    ) -> Result<()> {
+        // Get the input layout from the cache
+        let input_layout = self.get::<InputLayout>(input_layout_key.as_ref()).ok_or_else(|| anyhow::anyhow!("Input layout not found: {}", input_layout_key.as_ref()))?;
 
-    /// Create a new program in the cache with default settings.
-    /// The only vertex inputs are position and color.
-    pub fn create_program_default(&mut self, key: impl Into<String>) {
-        let program = Program::__new_default().unwrap();
+        // Generate the vertex and fragment shaders
+        let (vertex_code, fragment_code) = input_layout.generate_vertex_fragment_shaders(vertex, fragment)?;
+        let vertex_shader = Shader::__new(ShaderStage::Vertex, &vertex_code)?;
+        let fragment_shader = Shader::__new(ShaderStage::Fragment, &fragment_code)?;
+
+        // Create the program from the shaders
+        let program = Program::__new(&[vertex_shader, fragment_shader])?;
+
+        // Insert the program into the cache
         self.insert(key, program);
+
+        Ok(())
     }
 
     /// Create a new input layout in the cache from the given vertex layout.

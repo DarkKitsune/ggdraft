@@ -16,16 +16,13 @@ pub fn graphics_init(
     _app_data: AppData<Data>,
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
-    // Create default shader program
-    graphics_cache.create_program_default("program");
-
     // Create triangle vertices
     let positions = vec![
         vector!(0.0, 0.5, 0.0),
         vector!(-0.5, -0.5, 0.0),
         vector!(0.5, -0.5, 0.0),
     ];
-    let colors = vec![color::RED, color::GREEN, color::BLUE];
+    let colors = vec![RED, GREEN, BLUE];
     let indices = vec![0, 1, 2];
 
     // Create vertex layout describing the vertices going into the shader
@@ -51,6 +48,34 @@ pub fn graphics_init(
     // Create a vertex array from the vertex layout
     graphics_cache.create_input_layout_from_vertex_layout("input layout", layout);
 
+    // Create shader program
+    graphics_cache.create_program_vertex_fragment(
+        // Name of the program
+        "program",
+        
+        // Name of the input layout to use
+        "input layout",
+
+        // Vertex shader
+        |input: &ShaderInputs, output: &mut ShaderOutputs| {
+            // Set the vertex position to the input position
+            output.set_vertex_position(input.get("position")?.append(1.0))?;
+
+            // Set the color to the input color, or white if no color is provided
+            output.set("color", input.get("color").unwrap_or(WHITE.into()))?;
+
+            Ok(())
+        },
+
+        // Fragment shader
+        |input: &ShaderInputs, output: &mut ShaderOutputs| {
+            // Set the output color to the input color
+            output.set("color", input.get("color")?)?;
+
+            Ok(())
+        },
+    )?;
+
     Ok(())
 }
 
@@ -70,9 +95,9 @@ pub fn render(
     graphics_cache: &mut GfxCache,
     framebuffer: TargetBuffer,
 ) -> AppEventResult<()> {
-    let clear_color = color::BLUE // Start with blue
-        .lerp(&color::GRAY, 0.5) // Mix 50% with gray
-        .lerp(&color::WHITE, 0.25); // Mix 25% with white
+    let clear_color = BLUE // Start with blue
+        .lerp(&GRAY, 0.5) // Mix 50% with gray
+        .lerp(&WHITE, 0.25); // Mix 25% with white
 
     // Clear the framebuffer with the clear color.
     framebuffer.clear_with_color(clear_color);

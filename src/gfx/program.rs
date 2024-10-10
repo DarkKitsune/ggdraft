@@ -102,14 +102,6 @@ impl Program {
         Ok(Self { handle })
     }
 
-    /// Create a new program with default shaders.
-    /// The only vertex inputs are position and color.
-    pub(crate) fn __new_default() -> Result<Self> {
-        let vertex_shader = Shader::__new(DEFAULT_VERTEX_SHADER, ShaderStage::Vertex)?;
-        let fragment_shader = Shader::__new(DEFAULT_FRAGMENT_SHADER, ShaderStage::Fragment)?;
-        Self::__new(&[vertex_shader, fragment_shader])
-    }
-
     /// Get the GL handle
     pub fn handle(&self) -> u32 {
         self.handle

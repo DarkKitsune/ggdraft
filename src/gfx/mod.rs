@@ -6,6 +6,7 @@ pub mod shader;
 pub mod target_buffer;
 pub mod vertex_layout;
 pub mod vertex_list;
+pub mod shader_gen;
 
 use std::{
     cell::{Cell, RefCell},
