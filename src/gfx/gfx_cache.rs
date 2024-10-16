@@ -1,18 +1,12 @@
 use std::{
     any::{Any, TypeId},
-    collections::HashMap,
+    collections::HashMap, rc::Rc,
 };
 
 use anyhow::Result;
 
 use super::{
-    buffer::Buffer,
-    input_layout::InputLayout,
-    program::Program,
-    shader::{Shader, ShaderStage},
-    shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs},
-    vertex_layout::VertexLayout,
-    vertex_list::VertexList,
+    buffer::Buffer, input_layout::InputLayout, mesh::Mesh, program::Program, shader::{Shader, ShaderStage}, shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs}, vertex_layout::VertexLayout, vertex_list::VertexList
 };
 
 pub struct GfxCache {
@@ -43,15 +37,24 @@ impl GfxCache {
     }
 
     /// Create a new buffer with the given length in the cache.
-    pub fn create_vertex_buffer(&mut self, key: impl Into<String>, vertex_list: &VertexList) {
-        let buffer = Buffer::__from_slice(vertex_list.data(), Some(vertex_list.layout().clone()));
+    pub fn create_buffer_from_slice<T: 'static>(&mut self, key: impl Into<String>, data: &[T]) {
+        // Create the buffer
+        let buffer = Buffer::__from_slice(data, None);
+
+        // Insert the buffer into the cache
         self.insert(key, buffer);
     }
 
-    /// Create a new buffer with the given length in the cache.
-    pub fn create_buffer_from_slice<T: 'static>(&mut self, key: impl Into<String>, data: &[T]) {
-        let buffer = Buffer::__from_slice(data, None);
-        self.insert(key, buffer);
+    /// Create a `Mesh` in the cache from the given vertex list.
+    pub fn create_mesh(&mut self, key: impl Into<String>, vertex_layout: Rc<VertexLayout>, vertex_list: &VertexList) {
+        // Create the vertex buffer
+        let vertex_buffer = Buffer::__from_slice(vertex_list.vertex_data(), Some(vertex_layout));
+
+        // Create the index buffer
+        let index_buffer = Buffer::__from_slice(vertex_list.indices(), None);
+
+        // Create the mesh in the cache
+        self.insert(key, Mesh::new(vertex_buffer, index_buffer));
     }
 
     /// Create a new program in the cache using the given input layout.
@@ -89,7 +92,7 @@ impl GfxCache {
     pub fn create_input_layout_from_vertex_layout(
         &mut self,
         key: impl Into<String>,
-        vertex_layout: VertexLayout,
+        vertex_layout: Rc<VertexLayout>,
     ) {
         let input_layout = InputLayout::__from_vertex_layout(vertex_layout);
         self.insert(key, input_layout);

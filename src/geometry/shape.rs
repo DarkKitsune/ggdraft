@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use anyhow::Result;
 use ggmath::prelude::*;
 
@@ -103,7 +105,7 @@ impl ShapeTriangles {
     }
 
     /// Convert this `ShapeTriangles` into a `VertexList` using the given layout.
-    pub fn into_vertex_list(self, layout: VertexLayout) -> Result<VertexList> {
+    pub fn into_vertex_list(self, layout: Rc<VertexLayout>) -> Result<VertexList> {
         VertexList::new(
             layout,
             &[
@@ -111,7 +113,7 @@ impl ShapeTriangles {
                 VertexListInput::Normal(&self.normals),
                 VertexListInput::Color(&self.colors),
             ],
-            Some(self.indices),
+            self.indices,
         )
     }
 }
@@ -206,22 +208,22 @@ impl ShapeToTriangles for Rectangle {
     }
 }
 
-/// A box shape in 3D space.
-pub struct Box {
-    /// The center of the box.
+/// A cuboid shape in 3D space.
+pub struct Cuboid {
+    /// The center of the cuboid.
     pub center: Vector3<f32>,
-    /// The forward direction of the box.
+    /// The forward direction of the cuboid.
     pub forward: Vector3<f32>,
-    /// The up direction of the box.
+    /// The up direction of the cuboid.
     pub up: Vector3<f32>,
-    /// The size of the box.
+    /// The size of the cuboid.
     pub size: Vector3<f32>,
-    /// The color of the box.
+    /// The color of the cuboid.
     pub color: Vector4<f32>,
 }
 
-impl Box {
-    /// Creates a new box.
+impl Cuboid {
+    /// Creates a new cuboid.
     pub fn new(
         center: Vector3<f32>,
         forward: Vector3<f32>,
@@ -241,13 +243,13 @@ impl Box {
         }
     }
 
-    /// Creates a new box facing the positive Z-axis.
+    /// Creates a new cuboid facing the positive Z-axis.
     pub fn new_z(center: Vector3<f32>, size: Vector3<f32>, color: Vector4<f32>) -> Self {
         Self::new(center, Vector3::unit_z(), Vector3::unit_y(), size, color)
     }
 }
 
-impl ShapeToTriangles for Box {
+impl ShapeToTriangles for Cuboid {
     fn to_triangles(&self) -> ShapeTriangles {
         // Calculate the half size.
         let half_size = self.size / 2.0;
@@ -257,7 +259,7 @@ impl ShapeToTriangles for Box {
         let up = self.up;
         let right = forward.cross(&up);
 
-        // Create rectangle shapes for each side of the box.
+        // Create rectangle shapes for each side of the cuboid.
         let rectangles = vec![
             Rectangle::new(
                 self.center + forward * half_size.z(),

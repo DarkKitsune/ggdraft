@@ -1,10 +1,12 @@
+use std::rc::Rc;
+
 use super::vertex_layout::{VertexComponent, VertexLayout};
 
 /// A buffer object that can be used to store data on the GPU.
 pub struct Buffer<T> {
     handle: u32,
     length: usize,
-    vertex_layout: Option<VertexLayout>,
+    vertex_layout: Option<Rc<VertexLayout>>,
     _phantom: std::marker::PhantomData<T>,
 }
 
@@ -16,7 +18,7 @@ impl<T> !Sync for Buffer<T> {}
 
 impl<T> Buffer<T> {
     /// Create a new buffer with the given length (in elements, not bytes).
-    pub(crate) fn __from_slice(data: &[T], vertex_layout: Option<VertexLayout>) -> Self {
+    pub(crate) fn __from_slice(data: &[T], vertex_layout: Option<Rc<VertexLayout>>) -> Self {
         let mut handle = 0;
         let length = data.len();
 
@@ -65,8 +67,8 @@ impl<T> Buffer<T> {
 
     /// Get the vertex layout of the buffer.
     /// Returns None if the buffer is not a vertex buffer.
-    pub fn vertex_layout(&self) -> Option<&VertexLayout> {
-        self.vertex_layout.as_ref()
+    pub fn vertex_layout(&self) -> Option<Rc<VertexLayout>> {
+        self.vertex_layout.clone()
     }
 }
 

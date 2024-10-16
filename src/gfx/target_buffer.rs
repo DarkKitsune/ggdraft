@@ -2,9 +2,7 @@ use anyhow::Result;
 use ggmath::prelude::*;
 
 use super::{
-    buffer::{IndexBuffer, VertexBuffer},
-    input_layout::{InputLayout, VERTEX_BUFFER_LOCATION},
-    program::Program,
+    input_layout::{InputLayout, VERTEX_BUFFER_LOCATION}, mesh::Mesh, program::Program
 };
 
 /// Represents a GL buffer for rendering to.
@@ -42,13 +40,15 @@ impl TargetBuffer {
     }
 
     /// Render triangles to the buffer using the given vertices.
-    pub fn render_triangles(
+    pub fn render_mesh(
         &self,
         program: &Program,
-        vertex_buffer: &VertexBuffer,
-        index_buffer: &IndexBuffer,
+        mesh_buffers: &Mesh,
         input_layout: &InputLayout,
     ) -> Result<()> {
+        let vertex_buffer = &mesh_buffers.vertex_buffer;
+        let index_buffer = &mesh_buffers.index_buffer;
+
         // Get the index count.
         let index_count = index_buffer.len();
 

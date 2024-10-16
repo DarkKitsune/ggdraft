@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::gfx::{
     vertex_layout::{VertexInput, VertexLayout},
     vertex_list::VertexList,
@@ -20,19 +22,18 @@ pub fn graphics_init(
     let rectangle = Rectangle::new_z(Vector3::zero(), vector!(1.0, 0.5), RED);
 
     // Create vertex layout describing the vertices going into the shader
-    let layout = VertexLayout::new()
+    let vertex_layout = Rc::new(VertexLayout::new()
         .with_input(VertexInput::Position)
-        .with_input(VertexInput::Color);
+        .with_input(VertexInput::Color));
 
     // Create vertex list
-    let vertex_list = VertexList::from_shape(layout.clone(), &rectangle)?;
+    let vertex_list = VertexList::from_shape(vertex_layout.clone(), &rectangle)?;
 
-    // Create a vertex and index buffer from the vertex list
-    graphics_cache.create_vertex_buffer("vertex buffer", &vertex_list);
-    graphics_cache.create_buffer_from_slice("index buffer", vertex_list.indices().unwrap());
+    // Create a mesh from the vertex list
+    graphics_cache.create_mesh("mesh", vertex_layout.clone(), &vertex_list);
 
     // Create a vertex array from the vertex layout
-    graphics_cache.create_input_layout_from_vertex_layout("input layout", layout);
+    graphics_cache.create_input_layout_from_vertex_layout("input layout", vertex_layout);
 
     // Create shader program
     graphics_cache.create_program_vertex_fragment(
@@ -90,10 +91,9 @@ pub fn render(
 
     // Draw the triangle
     let program = graphics_cache.get("program").unwrap();
-    let vertex_buffer = graphics_cache.get("vertex buffer").unwrap();
-    let index_buffer = graphics_cache.get("index buffer").unwrap();
     let input_layout = graphics_cache.get("input layout").unwrap();
-    framebuffer.render_triangles(program, vertex_buffer, index_buffer, input_layout)?;
+    let mesh = graphics_cache.get("mesh").unwrap();
+    framebuffer.render_mesh(program, mesh, input_layout)?;
 
     Ok(())
 }

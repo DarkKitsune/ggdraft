@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use anyhow::Result;
 
 use super::{
@@ -17,7 +19,7 @@ pub(crate) const _INSTANCE_BUFFER_LOCATION: u32 = 1;
 
 /// Layout describing a set of vertex and instance inputs for rendering.
 pub struct InputLayout {
-    layout: VertexLayout,
+    layout: Rc<VertexLayout>,
     handle: u32,
 }
 
@@ -27,7 +29,7 @@ impl !Sync for InputLayout {}
 impl InputLayout {
     /// Create a new vertex array from the given vertex layout.
     // TODO: Add instancing support.
-    pub(crate) fn __from_vertex_layout(layout: VertexLayout) -> Self {
+    pub(crate) fn __from_vertex_layout(layout: Rc<VertexLayout>) -> Self {
         let mut handle = 0;
 
         unsafe {
@@ -73,8 +75,8 @@ impl InputLayout {
     /// Validate a vertex buffer for this input layout.
     /// Returns an error if the buffer is not compatible with the layout.
     pub fn validate_buffer(&self, buffer: &VertexBuffer) -> Result<()> {
-        if buffer.vertex_layout() != Some(&self.layout) {
-            anyhow::bail!("Buffer is not compatible with input layout.");
+        if buffer.vertex_layout() != Some(self.layout.clone()) {
+            anyhow::bail!("Buffer is not compatible with the input layout.");
         }
         Ok(())
     }

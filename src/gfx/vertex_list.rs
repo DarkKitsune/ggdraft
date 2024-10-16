@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use anyhow::Result;
 use ggmath::prelude::*;
 
@@ -77,17 +79,17 @@ impl<'a> VertexListInput<'a> {
 
 /// Represents a list of vertices.
 pub struct VertexList {
-    layout: VertexLayout,
+    layout: Rc<VertexLayout>,
     data: Vec<VertexComponent>,
-    indices: Option<Vec<u32>>,
+    indices: Vec<u32>,
 }
 
 impl VertexList {
     /// Create a new vertex list.
     pub fn new(
-        layout: VertexLayout,
+        layout: Rc<VertexLayout>,
         inputs: &[VertexListInput],
-        indices: Option<Vec<u32>>,
+        indices: Vec<u32>,
     ) -> Result<Self> {
         // Validate the layout first.
         layout.validate()?;
@@ -127,12 +129,12 @@ impl VertexList {
     }
 
     /// Create a new vertex list from the given shape.
-    pub fn from_shape(layout: VertexLayout, shape: &impl ShapeToTriangles) -> Result<Self> {
+    pub fn from_shape(layout: Rc<VertexLayout>, shape: &impl ShapeToTriangles) -> Result<Self> {
         shape.to_triangles().into_vertex_list(layout)
     }
 
-    /// Get the data within the vertex list.
-    pub fn data(&self) -> &[VertexComponent] {
+    /// Get the vertex data within the vertex list.
+    pub fn vertex_data(&self) -> &[VertexComponent] {
         &self.data
     }
 
@@ -142,8 +144,7 @@ impl VertexList {
     }
 
     /// Get the indices of the vertex list.
-    /// Returns `None` if the vertex list is not indexed.
-    pub fn indices(&self) -> Option<&[u32]> {
-        self.indices.as_deref()
+    pub fn indices(&self) -> &[u32] {
+        &self.indices
     }
 }
