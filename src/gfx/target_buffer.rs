@@ -48,8 +48,10 @@ impl TargetBuffer {
         vertex_buffer: &VertexBuffer,
         index_buffer: &IndexBuffer,
         input_layout: &InputLayout,
-        index_count: usize,
     ) -> Result<()> {
+        // Get the index count.
+        let index_count = index_buffer.len();
+
         // Return early if index_count == 0.
         if index_count == 0 {
             return Ok(());

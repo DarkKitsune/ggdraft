@@ -16,14 +16,8 @@ pub fn graphics_init(
     _app_data: AppData<Data>,
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
-    // Create triangle vertices
-    let positions = vec![
-        vector!(0.0, 0.5, 0.0),
-        vector!(-0.5, -0.5, 0.0),
-        vector!(0.5, -0.5, 0.0),
-    ];
-    let colors = vec![RED, GREEN, BLUE];
-    let indices = vec![0, 1, 2];
+    // Create a rectangle
+    let rectangle = Rectangle::new_z(Vector3::zero(), vector!(1.0, 0.5), RED.into());
 
     // Create vertex layout describing the vertices going into the shader
     let layout = VertexLayout::new()
@@ -31,15 +25,7 @@ pub fn graphics_init(
         .with_input(VertexInput::Color);
 
     // Create vertex list
-    let vertex_list = VertexList::new(
-        layout.clone(),
-        &[
-            VertexListInput::Position(&positions),
-            VertexListInput::Color(&colors),
-        ],
-        Some(indices),
-    )
-    .unwrap();
+    let vertex_list = VertexList::from_shape(layout.clone(), &rectangle)?;
 
     // Create a vertex and index buffer from the vertex list
     graphics_cache.create_vertex_buffer("vertex buffer", &vertex_list);
@@ -107,7 +93,7 @@ pub fn render(
     let vertex_buffer = graphics_cache.get("vertex buffer").unwrap();
     let index_buffer = graphics_cache.get("index buffer").unwrap();
     let input_layout = graphics_cache.get("input layout").unwrap();
-    framebuffer.render_triangles(program, vertex_buffer, index_buffer, input_layout, 3)?;
+    framebuffer.render_triangles(program, vertex_buffer, index_buffer, input_layout)?;
 
     Ok(())
 }

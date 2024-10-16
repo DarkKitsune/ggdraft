@@ -3,6 +3,7 @@ pub use ggmath::prelude::*;
 
 pub use crate::{
     color::*,
+    geometry::shape::*,
     gfx::{gfx_cache::GfxCache, shader_gen::prelude::*, target_buffer::TargetBuffer, Gfx},
 };
 

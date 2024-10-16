@@ -1,6 +1,8 @@
 use anyhow::Result;
 use ggmath::prelude::*;
 
+use crate::geometry::shape::ShapeToTriangles;
+
 use super::vertex_layout::{VertexComponent, VertexInput, VertexLayout};
 
 /// Represents an input for vertices going into a VertexList.
@@ -122,6 +124,23 @@ impl VertexList {
             data,
             indices,
         })
+    }
+
+    /// Create a new vertex list from the given shape.
+    pub fn from_shape(
+        layout: VertexLayout,
+        shape: &impl ShapeToTriangles,
+    ) -> Result<Self> {
+        let triangles = shape.to_triangles();
+        Self::new(
+            layout,
+            &[
+                VertexListInput::Position(&triangles.positions),
+                VertexListInput::Normal(&triangles.normals),
+                VertexListInput::Color(&triangles.colors),
+            ],
+            Some(triangles.indices),
+        )
     }
 
     /// Get the data within the vertex list.
