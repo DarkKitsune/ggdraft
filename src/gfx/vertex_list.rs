@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use anyhow::Result;
 use ggmath::prelude::*;
+use ggutil::prelude::MaybeOwned;
 
 use crate::geometry::shape::ShapeToTriangles;
 
@@ -146,5 +147,29 @@ impl VertexList {
     /// Get the indices of the vertex list.
     pub fn indices(&self) -> &[u32] {
         &self.indices
+    }
+}
+
+/// Trait for types that can be converted into a `VertexList`.
+pub trait IntoVertexList<'a> {
+    /// Convert the type into a `VertexList`.
+    fn into_vertex_list(self, layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList>;
+}
+
+impl<'a> IntoVertexList<'a> for VertexList {
+    fn into_vertex_list(self, _layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList> {
+        MaybeOwned::Owned(self)
+    }
+}
+
+impl<'a> IntoVertexList<'a> for &'a VertexList {
+    fn into_vertex_list(self, _layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList> {
+        MaybeOwned::Borrowed(self)
+    }
+}
+
+impl<'a, T: ShapeToTriangles> IntoVertexList<'a> for &'a T {
+    fn into_vertex_list(self, layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList> {
+        MaybeOwned::Owned(VertexList::from_shape(layout, self).unwrap())
     }
 }

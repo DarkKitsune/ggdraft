@@ -18,9 +18,6 @@ pub fn graphics_init(
     _app_data: AppData<Data>,
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
-    // Create a rectangle
-    let rectangle = Rectangle::new_z(Vector3::zero(), vector!(1.0, 0.5), RED);
-
     // Create vertex layout describing the vertices going into the shader
     let vertex_layout = Rc::new(
         VertexLayout::new()
@@ -28,11 +25,28 @@ pub fn graphics_init(
             .with_input(VertexInput::Color),
     );
 
-    // Create vertex list
-    let vertex_list = VertexList::from_shape(vertex_layout.clone(), &rectangle)?;
-
-    // Create a mesh from the vertex list
-    graphics_cache.create_mesh("mesh", vertex_layout.clone(), &vertex_list);
+    // Create a mesh from a rectangle shape
+    graphics_cache.create_mesh(
+        "mesh",
+        vertex_layout.clone(),
+        &vec![
+            Rectangle::default()
+                .with_center(vector!(0.1, 0.2, 0.0))
+                .with_rotation_z(0.2)
+                .with_size(vector!(0.4, 0.7))
+                .with_color(BLUE),
+            Rectangle::default()
+                .with_center(vector!(0.6, 0.7, 0.0))
+                .with_rotation_z(0.5)
+                .with_size(vector!(0.3, 0.3))
+                .with_color(RED),
+            Rectangle::default()
+                .with_center(vector!(-0.8, 0.3, 0.0))
+                .with_rotation_z(0.7)
+                .with_size(vector!(1.5, 0.5))
+                .with_color(GREEN),
+        ],
+    );
 
     // Create a vertex array from the vertex layout
     graphics_cache.create_input_layout_from_vertex_layout("input layout", vertex_layout);

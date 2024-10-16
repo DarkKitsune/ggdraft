@@ -14,7 +14,7 @@ use super::{
     shader::{Shader, ShaderStage},
     shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs},
     vertex_layout::VertexLayout,
-    vertex_list::VertexList,
+    vertex_list::IntoVertexList,
 };
 
 pub struct GfxCache {
@@ -54,12 +54,15 @@ impl GfxCache {
     }
 
     /// Create a `Mesh` in the cache from the given vertex list.
-    pub fn create_mesh(
+    pub fn create_mesh<'a>(
         &mut self,
         key: impl Into<String>,
         vertex_layout: Rc<VertexLayout>,
-        vertex_list: &VertexList,
+        vertex_list: impl IntoVertexList<'a>,
     ) {
+        // Get the vertex list
+        let vertex_list = vertex_list.into_vertex_list(vertex_layout.clone());
+
         // Create the vertex buffer
         let vertex_buffer = Buffer::__from_slice(vertex_list.vertex_data(), Some(vertex_layout));
 

@@ -3,10 +3,15 @@ use std::rc::Rc;
 use anyhow::Result;
 use ggmath::prelude::*;
 
-use crate::gfx::{
-    vertex_layout::VertexLayout,
-    vertex_list::{VertexList, VertexListInput},
+use crate::{
+    color,
+    gfx::{
+        vertex_layout::VertexLayout,
+        vertex_list::{VertexList, VertexListInput},
+    },
 };
+
+use super::orientation::{HasOrientation, Orientation};
 
 /// A list of vertices and indices that represent a shape in 3D space using triangles.
 pub struct ShapeTriangles {
@@ -144,14 +149,8 @@ where
 
 /// A rectangle shape in 3D space.
 pub struct Rectangle {
-    /// The center of the rectangle.
-    pub center: Vector3<f32>,
-    /// The forward direction of the rectangle.
-    pub forward: Vector3<f32>,
-    /// The up direction of the rectangle.
-    pub up: Vector3<f32>,
-    /// The size of the rectangle.
-    pub size: Vector2<f32>,
+    /// The orientation of the rectangle.
+    pub orientation: Orientation,
     /// The color of the rectangle.
     pub color: Vector4<f32>,
 }
@@ -160,152 +159,98 @@ impl Rectangle {
     /// Creates a new rectangle.
     pub fn new(
         center: Vector3<f32>,
-        forward: Vector3<f32>,
-        up: Vector3<f32>,
         size: Vector2<f32>,
+        rotation: Quaternion<f32>,
         color: Vector4<f32>,
     ) -> Self {
-        // Normalize the forward and up vectors.
-        let forward = forward.normalized();
-        let up = up.normalized();
         Self {
-            center,
-            forward,
-            up,
-            size,
+            orientation: Orientation::new(center, rotation, vector!(size.x(), size.y(), 1.0)),
             color,
         }
     }
 
-    /// Creates a new rectangle facing the positive Z-axis.
-    pub fn new_z(center: Vector3<f32>, size: Vector2<f32>, color: Vector4<f32>) -> Self {
-        Self::new(center, Vector3::unit_z(), Vector3::unit_y(), size, color)
+    /// Creates a new rectangle using the given orientation.
+    /// The size of the rectangle will be the orientation's scale.
+    pub fn from_orientation(orientation: Orientation, color: Vector4<f32>) -> Self {
+        Self { orientation, color }
+    }
+
+    /// Sets the center of the rectangle.
+    pub fn with_center(mut self, center: Vector3<f32>) -> Self {
+        self.orientation.set_position(center);
+        self
+    }
+
+    /// Sets the size of the rectangle.
+    pub fn with_size(mut self, size: Vector2<f32>) -> Self {
+        self.orientation.set_scale(vector!(size.x(), size.y(), 1.0));
+        self
+    }
+
+    /// Sets the rotation of the rectangle.
+    pub fn with_rotation(mut self, rotation: Quaternion<f32>) -> Self {
+        self.orientation.set_rotation(rotation);
+        self
+    }
+
+    /// Sets the rotation of the rectangle (Z up)
+    pub fn with_rotation_z(mut self, radians: f32) -> Self {
+        self.orientation
+            .set_rotation(Quaternion::from_rotation_z(radians));
+        self
+    }
+
+    /// Sets the orientation of the rectangle.
+    pub fn with_orientation(mut self, orientation: Orientation) -> Self {
+        self.orientation = orientation;
+        self
+    }
+
+    /// Sets the color of the rectangle.
+    pub fn with_color(mut self, color: Vector4<f32>) -> Self {
+        self.color = color;
+        self
+    }
+}
+
+impl Default for Rectangle {
+    fn default() -> Self {
+        Self::from_orientation(Orientation::default(), color::WHITE)
+    }
+}
+
+impl HasOrientation for Rectangle {
+    fn orientation(&self) -> &Orientation {
+        &self.orientation
+    }
+
+    fn orientation_mut(&mut self) -> &mut Orientation {
+        &mut self.orientation
     }
 }
 
 impl ShapeToTriangles for Rectangle {
     fn to_triangles(&self) -> ShapeTriangles {
         // Calculate the half size.
-        let half_size = self.size / 2.0;
+        let half_size = self.scale() / 2.0;
 
-        // Calculate the forward, up, and right vectors.
-        let forward = self.forward;
-        let up = self.up;
-        let right = forward.cross(&up);
+        // Get the transform matrix.
+        let matrix = self.get_transform();
 
-        // Calculate the positions, normals, colors, and indices.
+        // Calculate the positions.
         let positions = vec![
-            self.center + right * half_size.x() + up * half_size.y(),
-            self.center + right * half_size.x() - up * half_size.y(),
-            self.center - right * half_size.x() - up * half_size.y(),
-            self.center - right * half_size.x() + up * half_size.y(),
+            (matrix * vector!(-half_size.x(), -half_size.y(), 0.0, 1.0)).xyz(),
+            (matrix * vector!(half_size.x(), -half_size.y(), 0.0, 1.0)).xyz(),
+            (matrix * vector!(half_size.x(), half_size.y(), 0.0, 1.0)).xyz(),
+            (matrix * vector!(-half_size.x(), half_size.y(), 0.0, 1.0)).xyz(),
         ];
-        let normals = vec![forward, forward, forward, forward];
-        let colors = vec![self.color, self.color, self.color, self.color];
+
+        // Calculate the normals, colors, and indices.
+        let normal = (matrix * vector!(0.0, 0.0, 1.0, 1.0)).xyz().normalized();
+        let normals = vec![normal; 4];
+        let colors = vec![self.color; 4];
         let indices = vec![0, 1, 2, 0, 2, 3];
 
         unsafe { ShapeTriangles::new_unchecked(positions, normals, colors, indices) }
-    }
-}
-
-/// A cuboid shape in 3D space.
-pub struct Cuboid {
-    /// The center of the cuboid.
-    pub center: Vector3<f32>,
-    /// The forward direction of the cuboid.
-    pub forward: Vector3<f32>,
-    /// The up direction of the cuboid.
-    pub up: Vector3<f32>,
-    /// The size of the cuboid.
-    pub size: Vector3<f32>,
-    /// The color of the cuboid.
-    pub color: Vector4<f32>,
-}
-
-impl Cuboid {
-    /// Creates a new cuboid.
-    pub fn new(
-        center: Vector3<f32>,
-        forward: Vector3<f32>,
-        up: Vector3<f32>,
-        size: Vector3<f32>,
-        color: Vector4<f32>,
-    ) -> Self {
-        // Normalize the forward and up vectors.
-        let forward = forward.normalized();
-        let up = up.normalized();
-        Self {
-            center,
-            forward,
-            up,
-            size,
-            color,
-        }
-    }
-
-    /// Creates a new cuboid facing the positive Z-axis.
-    pub fn new_z(center: Vector3<f32>, size: Vector3<f32>, color: Vector4<f32>) -> Self {
-        Self::new(center, Vector3::unit_z(), Vector3::unit_y(), size, color)
-    }
-}
-
-impl ShapeToTriangles for Cuboid {
-    fn to_triangles(&self) -> ShapeTriangles {
-        // Calculate the half size.
-        let half_size = self.size / 2.0;
-
-        // Calculate the forward, up, and right vectors.
-        let forward = self.forward;
-        let up = self.up;
-        let right = forward.cross(&up);
-
-        // Create rectangle shapes for each side of the cuboid.
-        let rectangles = vec![
-            Rectangle::new(
-                self.center + forward * half_size.z(),
-                forward,
-                up,
-                self.size.xy(),
-                self.color,
-            ),
-            Rectangle::new(
-                self.center - forward * half_size.z(),
-                -forward,
-                up,
-                self.size.xy(),
-                self.color,
-            ),
-            Rectangle::new(
-                self.center + up * half_size.y(),
-                up,
-                forward,
-                self.size.xz(),
-                self.color,
-            ),
-            Rectangle::new(
-                self.center - up * half_size.y(),
-                -up,
-                forward,
-                self.size.xz(),
-                self.color,
-            ),
-            Rectangle::new(
-                self.center + right * half_size.x(),
-                right,
-                up,
-                self.size.yz(),
-                self.color,
-            ),
-            Rectangle::new(
-                self.center - right * half_size.x(),
-                -right,
-                up,
-                self.size.yz(),
-                self.color,
-            ),
-        ];
-
-        // Convert the rectangles to triangles.
-        rectangles.to_triangles()
     }
 }
