@@ -128,16 +128,7 @@ impl VertexList {
 
     /// Create a new vertex list from the given shape.
     pub fn from_shape(layout: VertexLayout, shape: &impl ShapeToTriangles) -> Result<Self> {
-        let triangles = shape.to_triangles();
-        Self::new(
-            layout,
-            &[
-                VertexListInput::Position(&triangles.positions),
-                VertexListInput::Normal(&triangles.normals),
-                VertexListInput::Color(&triangles.colors),
-            ],
-            Some(triangles.indices),
-        )
+        shape.to_triangles().into_vertex_list(layout)
     }
 
     /// Get the data within the vertex list.

@@ -1,18 +1,70 @@
+use anyhow::Result;
 use ggmath::prelude::*;
+
+use crate::gfx::{vertex_layout::VertexLayout, vertex_list::{VertexList, VertexListInput}};
 
 /// A list of vertices and indices that represent a shape in 3D space using triangles.
 pub struct ShapeTriangles {
     /// The positions of the vertices.
-    pub(crate) positions: Vec<Vector3<f32>>,
+    positions: Vec<Vector3<f32>>,
     /// The normals of the vertices.
-    pub(crate) normals: Vec<Vector3<f32>>,
+    normals: Vec<Vector3<f32>>,
     /// The colors of the vertices.
-    pub(crate) colors: Vec<Vector4<f32>>,
+    colors: Vec<Vector4<f32>>,
     /// The indices of the vertices that make up the triangles.
-    pub(crate) indices: Vec<u32>,
+    indices: Vec<u32>,
 }
 
 impl ShapeTriangles {
+    /// Creates a new `ShapeTriangles` with the given vertices and indices.
+    /// # Safety
+    /// This function is unsafe because it does not check if the indices are valid.
+    /// It also does not check other arguments.
+    pub(crate) unsafe fn new_unchecked(
+        positions: Vec<Vector3<f32>>,
+        normals: Vec<Vector3<f32>>,
+        colors: Vec<Vector4<f32>>,
+        indices: Vec<u32>,
+    ) -> Self {
+        Self {
+            positions,
+            normals,
+            colors,
+            indices,
+        }
+    }
+
+    /// Creates a new `ShapeTriangles` with the given vertices and indices.
+    pub fn new(
+        positions: Vec<Vector3<f32>>,
+        normals: Vec<Vector3<f32>>,
+        colors: Vec<Vector4<f32>>,
+        indices: Vec<u32>,
+    ) -> Result<Self> {
+        // Ensure that the positions, normals, and colors have the same length.
+        if positions.len() != normals.len() || positions.len() != colors.len() {
+            anyhow::bail!("The positions, normals, and colors must have the same length.");
+        }
+
+        // Ensure that the number of indices is a multiple of 3.
+        if indices.len() % 3 != 0 {
+            anyhow::bail!("The number of indices must be a multiple of 3.");
+        }
+
+        #[cfg(debug_assertions)]
+        {
+            // Ensure that all indices are valid.
+            for index in &indices {
+                if *index as usize >= positions.len() {
+                    anyhow::bail!("Index out of bounds: {}", index);
+                }
+            }
+        }
+
+        Ok(unsafe { Self::new_unchecked(positions, normals, colors, indices) })
+    }
+
+    /// Appends the triangles from another shape to this shape.
     pub fn append(&mut self, other: &mut ShapeTriangles) {
         let offset = self.positions.len() as u32;
         self.positions.append(&mut other.positions);
@@ -21,11 +73,73 @@ impl ShapeTriangles {
         self.indices
             .append(&mut other.indices.iter().map(|i| i + offset).collect());
     }
+
+    /// Returns the positions of the vertices.
+    pub fn positions(&self) -> &[Vector3<f32>] {
+        &self.positions
+    }
+
+    /// Returns the normals of the vertices.
+    pub fn normals(&self) -> &[Vector3<f32>] {
+        &self.normals
+    }
+
+    /// Returns the colors of the vertices.
+    pub fn colors(&self) -> &[Vector4<f32>] {
+        &self.colors
+    }
+
+    /// Returns the indices of the vertices that make up the triangles.
+    pub fn indices(&self) -> &[u32] {
+        &self.indices
+    }
+
+    /// Returns the number of triangles.
+    pub fn triangle_count(&self) -> usize {
+        self.indices.len() / 3
+    }
+
+    /// Convert this `ShapeTriangles` into a `VertexList` using the given layout.
+    pub fn into_vertex_list(self, layout: VertexLayout) -> Result<VertexList> {
+        VertexList::new(
+            layout,
+            &[
+                VertexListInput::Position(&self.positions),
+                VertexListInput::Normal(&self.normals),
+                VertexListInput::Color(&self.colors),
+            ],
+            Some(self.indices),
+        )
+    }
 }
 
+/// A trait for shapes that can be converted to a list of triangle vertices.
 pub trait ShapeToTriangles {
     /// Converts the shape to a list of triangle vertices.
     fn to_triangles(&self) -> ShapeTriangles;
+}
+
+// Implement ShapeToTriangles for Vec<T> where T: ShapeToTriangles.
+impl<T> ShapeToTriangles for Vec<T>
+where
+    T: ShapeToTriangles,
+{
+    fn to_triangles(&self) -> ShapeTriangles {
+        let mut triangles = ShapeTriangles::new(
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+        )
+        .unwrap();
+
+        for shape in self {
+            let mut shape_triangles = shape.to_triangles();
+            triangles.append(&mut shape_triangles);
+        }
+
+        triangles
+    }
 }
 
 /// A rectangle shape in 3D space.
@@ -71,30 +185,26 @@ impl Rectangle {
 
 impl ShapeToTriangles for Rectangle {
     fn to_triangles(&self) -> ShapeTriangles {
+        // Calculate the half size.
         let half_size = self.size / 2.0;
-        let forward = self.forward.normalized();
-        let up = self.up.normalized();
-        let right = forward.cross(&up).normalized();
 
+        // Calculate the forward, up, and right vectors.
+        let forward = self.forward;
+        let up = self.up;
+        let right = forward.cross(&up);
+
+        // Calculate the positions, normals, colors, and indices.
         let positions = vec![
             self.center + right * half_size.x() + up * half_size.y(),
             self.center + right * half_size.x() - up * half_size.y(),
             self.center - right * half_size.x() - up * half_size.y(),
             self.center - right * half_size.x() + up * half_size.y(),
         ];
-
         let normals = vec![forward, forward, forward, forward];
-
         let colors = vec![self.color, self.color, self.color, self.color];
-
         let indices = vec![0, 1, 2, 0, 2, 3];
 
-        ShapeTriangles {
-            positions,
-            normals,
-            colors,
-            indices,
-        }
+        unsafe { ShapeTriangles::new_unchecked(positions, normals, colors, indices) }
     }
 }
 
@@ -141,70 +251,25 @@ impl Box {
 
 impl ShapeToTriangles for Box {
     fn to_triangles(&self) -> ShapeTriangles {
+        // Calculate the half size.
         let half_size = self.size / 2.0;
-        let right = self.forward.cross(&self.up);
 
-        let mut front_face = Rectangle::new(
-            self.center + self.forward * half_size.z(),
-            self.forward,
-            self.up,
-            vector!(self.size.x(), self.size.y()),
-            self.color,
-        )
-        .to_triangles();
+        // Calculate the forward, up, and right vectors.
+        let forward = self.forward;
+        let up = self.up;
+        let right = forward.cross(&up);
 
-        let mut back_face = Rectangle::new(
-            self.center - self.forward * half_size.z(),
-            -self.forward,
-            self.up,
-            vector!(self.size.x(), self.size.y()),
-            self.color,
-        )
-        .to_triangles();
+        // Create rectangle shapes for each side of the box.
+        let rectangles = vec![
+            Rectangle::new(self.center + forward * half_size.z(), forward, up, self.size.xy(), self.color),
+            Rectangle::new(self.center - forward * half_size.z(), -forward, up, self.size.xy(), self.color),
+            Rectangle::new(self.center + up * half_size.y(), up, forward, self.size.xz(), self.color),
+            Rectangle::new(self.center - up * half_size.y(), -up, forward, self.size.xz(), self.color),
+            Rectangle::new(self.center + right * half_size.x(), right, up, self.size.yz(), self.color),
+            Rectangle::new(self.center - right * half_size.x(), -right, up, self.size.yz(), self.color),
+        ];
 
-        let mut right_face = Rectangle::new(
-            self.center + right * half_size.x(),
-            right,
-            self.up,
-            vector!(self.size.z(), self.size.y()),
-            self.color,
-        )
-        .to_triangles();
-
-        let mut left_face = Rectangle::new(
-            self.center - right * half_size.x(),
-            -right,
-            self.up,
-            vector!(self.size.z(), self.size.y()),
-            self.color,
-        )
-        .to_triangles();
-
-        let mut top_face = Rectangle::new(
-            self.center + self.up * half_size.y(),
-            self.up,
-            -self.forward,
-            vector!(self.size.x(), self.size.z()),
-            self.color,
-        )
-        .to_triangles();
-
-        let mut bottom_face = Rectangle::new(
-            self.center - self.up * half_size.y(),
-            -self.up,
-            self.forward,
-            vector!(self.size.x(), self.size.z()),
-            self.color,
-        )
-        .to_triangles();
-
-        // Append all the faces together.
-        front_face.append(&mut back_face);
-        front_face.append(&mut right_face);
-        front_face.append(&mut left_face);
-        front_face.append(&mut top_face);
-        front_face.append(&mut bottom_face);
-
-        front_face
+        // Convert the rectangles to triangles.
+        rectangles.to_triangles()
     }
 }
