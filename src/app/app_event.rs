@@ -17,7 +17,7 @@ pub fn graphics_init(
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
     // Create a rectangle
-    let rectangle = Rectangle::new_z(Vector3::zero(), vector!(1.0, 0.5), RED.into());
+    let rectangle = Rectangle::new_z(Vector3::zero(), vector!(1.0, 0.5), RED);
 
     // Create vertex layout describing the vertices going into the shader
     let layout = VertexLayout::new()

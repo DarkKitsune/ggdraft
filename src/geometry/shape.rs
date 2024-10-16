@@ -1,7 +1,10 @@
 use anyhow::Result;
 use ggmath::prelude::*;
 
-use crate::gfx::{vertex_layout::VertexLayout, vertex_list::{VertexList, VertexListInput}};
+use crate::gfx::{
+    vertex_layout::VertexLayout,
+    vertex_list::{VertexList, VertexListInput},
+};
 
 /// A list of vertices and indices that represent a shape in 3D space using triangles.
 pub struct ShapeTriangles {
@@ -125,13 +128,8 @@ where
     T: ShapeToTriangles,
 {
     fn to_triangles(&self) -> ShapeTriangles {
-        let mut triangles = ShapeTriangles::new(
-            Vec::new(),
-            Vec::new(),
-            Vec::new(),
-            Vec::new(),
-        )
-        .unwrap();
+        let mut triangles =
+            ShapeTriangles::new(Vec::new(), Vec::new(), Vec::new(), Vec::new()).unwrap();
 
         for shape in self {
             let mut shape_triangles = shape.to_triangles();
@@ -261,12 +259,48 @@ impl ShapeToTriangles for Box {
 
         // Create rectangle shapes for each side of the box.
         let rectangles = vec![
-            Rectangle::new(self.center + forward * half_size.z(), forward, up, self.size.xy(), self.color),
-            Rectangle::new(self.center - forward * half_size.z(), -forward, up, self.size.xy(), self.color),
-            Rectangle::new(self.center + up * half_size.y(), up, forward, self.size.xz(), self.color),
-            Rectangle::new(self.center - up * half_size.y(), -up, forward, self.size.xz(), self.color),
-            Rectangle::new(self.center + right * half_size.x(), right, up, self.size.yz(), self.color),
-            Rectangle::new(self.center - right * half_size.x(), -right, up, self.size.yz(), self.color),
+            Rectangle::new(
+                self.center + forward * half_size.z(),
+                forward,
+                up,
+                self.size.xy(),
+                self.color,
+            ),
+            Rectangle::new(
+                self.center - forward * half_size.z(),
+                -forward,
+                up,
+                self.size.xy(),
+                self.color,
+            ),
+            Rectangle::new(
+                self.center + up * half_size.y(),
+                up,
+                forward,
+                self.size.xz(),
+                self.color,
+            ),
+            Rectangle::new(
+                self.center - up * half_size.y(),
+                -up,
+                forward,
+                self.size.xz(),
+                self.color,
+            ),
+            Rectangle::new(
+                self.center + right * half_size.x(),
+                right,
+                up,
+                self.size.yz(),
+                self.color,
+            ),
+            Rectangle::new(
+                self.center - right * half_size.x(),
+                -right,
+                up,
+                self.size.yz(),
+                self.color,
+            ),
         ];
 
         // Convert the rectangles to triangles.
