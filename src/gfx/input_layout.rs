@@ -196,7 +196,8 @@ impl InputLayout {
                     )
                 })
                 .collect(),
-        ).map_err(|e| anyhow::anyhow!("Failed to link fragment inputs to vertex outputs: {}", e))?;
+        )
+        .map_err(|e| anyhow::anyhow!("Failed to link fragment inputs to vertex outputs: {}", e))?;
 
         Ok((code, fragment_inputs))
     }

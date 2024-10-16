@@ -1,6 +1,6 @@
 use crate::gfx::{
     vertex_layout::{VertexInput, VertexLayout},
-    vertex_list::{VertexList, VertexListInput},
+    vertex_list::VertexList,
 };
 
 use super::app_prelude::*;

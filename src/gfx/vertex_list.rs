@@ -127,10 +127,7 @@ impl VertexList {
     }
 
     /// Create a new vertex list from the given shape.
-    pub fn from_shape(
-        layout: VertexLayout,
-        shape: &impl ShapeToTriangles,
-    ) -> Result<Self> {
+    pub fn from_shape(layout: VertexLayout, shape: &impl ShapeToTriangles) -> Result<Self> {
         let triangles = shape.to_triangles();
         Self::new(
             layout,

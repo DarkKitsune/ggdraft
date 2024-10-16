@@ -18,10 +18,10 @@ impl ShapeTriangles {
         self.positions.append(&mut other.positions);
         self.normals.append(&mut other.normals);
         self.colors.append(&mut other.colors);
-        self.indices.append(&mut other.indices.iter().map(|i| i + offset).collect());
+        self.indices
+            .append(&mut other.indices.iter().map(|i| i + offset).collect());
     }
 }
-
 
 pub trait ShapeToTriangles {
     /// Converts the shape to a list of triangle vertices.
@@ -44,11 +44,23 @@ pub struct Rectangle {
 
 impl Rectangle {
     /// Creates a new rectangle.
-    pub fn new(center: Vector3<f32>, forward: Vector3<f32>, up: Vector3<f32>, size: Vector2<f32>, color: Vector4<f32>) -> Self {
+    pub fn new(
+        center: Vector3<f32>,
+        forward: Vector3<f32>,
+        up: Vector3<f32>,
+        size: Vector2<f32>,
+        color: Vector4<f32>,
+    ) -> Self {
         // Normalize the forward and up vectors.
         let forward = forward.normalized();
         let up = up.normalized();
-        Self { center, forward, up, size, color }
+        Self {
+            center,
+            forward,
+            up,
+            size,
+            color,
+        }
     }
 
     /// Creates a new rectangle facing the positive Z-axis.
@@ -71,26 +83,18 @@ impl ShapeToTriangles for Rectangle {
             self.center - right * half_size.x() + up * half_size.y(),
         ];
 
-        let normals = vec![
-            forward,
-            forward,
-            forward,
-            forward,
-        ];
+        let normals = vec![forward, forward, forward, forward];
 
-        let colors = vec![
-            self.color,
-            self.color,
-            self.color,
-            self.color,
-        ];
+        let colors = vec![self.color, self.color, self.color, self.color];
 
-        let indices = vec![
-            0, 1, 2,
-            0, 2, 3,
-        ];
+        let indices = vec![0, 1, 2, 0, 2, 3];
 
-        ShapeTriangles { positions, normals, colors, indices }
+        ShapeTriangles {
+            positions,
+            normals,
+            colors,
+            indices,
+        }
     }
 }
 
@@ -110,11 +114,23 @@ pub struct Box {
 
 impl Box {
     /// Creates a new box.
-    pub fn new(center: Vector3<f32>, forward: Vector3<f32>, up: Vector3<f32>, size: Vector3<f32>, color: Vector4<f32>) -> Self {
+    pub fn new(
+        center: Vector3<f32>,
+        forward: Vector3<f32>,
+        up: Vector3<f32>,
+        size: Vector3<f32>,
+        color: Vector4<f32>,
+    ) -> Self {
         // Normalize the forward and up vectors.
         let forward = forward.normalized();
         let up = up.normalized();
-        Self { center, forward, up, size, color }
+        Self {
+            center,
+            forward,
+            up,
+            size,
+            color,
+        }
     }
 
     /// Creates a new box facing the positive Z-axis.
@@ -134,7 +150,8 @@ impl ShapeToTriangles for Box {
             self.up,
             vector!(self.size.x(), self.size.y()),
             self.color,
-        ).to_triangles();
+        )
+        .to_triangles();
 
         let mut back_face = Rectangle::new(
             self.center - self.forward * half_size.z(),
@@ -142,7 +159,8 @@ impl ShapeToTriangles for Box {
             self.up,
             vector!(self.size.x(), self.size.y()),
             self.color,
-        ).to_triangles();
+        )
+        .to_triangles();
 
         let mut right_face = Rectangle::new(
             self.center + right * half_size.x(),
@@ -150,7 +168,8 @@ impl ShapeToTriangles for Box {
             self.up,
             vector!(self.size.z(), self.size.y()),
             self.color,
-        ).to_triangles();
+        )
+        .to_triangles();
 
         let mut left_face = Rectangle::new(
             self.center - right * half_size.x(),
@@ -158,7 +177,8 @@ impl ShapeToTriangles for Box {
             self.up,
             vector!(self.size.z(), self.size.y()),
             self.color,
-        ).to_triangles();
+        )
+        .to_triangles();
 
         let mut top_face = Rectangle::new(
             self.center + self.up * half_size.y(),
@@ -166,7 +186,8 @@ impl ShapeToTriangles for Box {
             -self.forward,
             vector!(self.size.x(), self.size.z()),
             self.color,
-        ).to_triangles();
+        )
+        .to_triangles();
 
         let mut bottom_face = Rectangle::new(
             self.center - self.up * half_size.y(),
@@ -174,7 +195,8 @@ impl ShapeToTriangles for Box {
             self.forward,
             vector!(self.size.x(), self.size.z()),
             self.color,
-        ).to_triangles();
+        )
+        .to_triangles();
 
         // Append all the faces together.
         front_face.append(&mut back_face);
@@ -186,5 +208,3 @@ impl ShapeToTriangles for Box {
         front_face
     }
 }
-
-

@@ -1,9 +1,6 @@
 use anyhow::Result;
 
-use super::shader_gen::{
-    shader_inputs::ShaderInput,
-    shader_type::ShaderType,
-};
+use super::shader_gen::{shader_inputs::ShaderInput, shader_type::ShaderType};
 
 // Allowed type for vertex data.
 pub type VertexComponent = f32;
