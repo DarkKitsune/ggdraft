@@ -1,12 +1,20 @@
 use std::{
     any::{Any, TypeId},
-    collections::HashMap, rc::Rc,
+    collections::HashMap,
+    rc::Rc,
 };
 
 use anyhow::Result;
 
 use super::{
-    buffer::Buffer, input_layout::InputLayout, mesh::Mesh, program::Program, shader::{Shader, ShaderStage}, shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs}, vertex_layout::VertexLayout, vertex_list::VertexList
+    buffer::Buffer,
+    input_layout::InputLayout,
+    mesh::Mesh,
+    program::Program,
+    shader::{Shader, ShaderStage},
+    shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs},
+    vertex_layout::VertexLayout,
+    vertex_list::VertexList,
 };
 
 pub struct GfxCache {
@@ -46,7 +54,12 @@ impl GfxCache {
     }
 
     /// Create a `Mesh` in the cache from the given vertex list.
-    pub fn create_mesh(&mut self, key: impl Into<String>, vertex_layout: Rc<VertexLayout>, vertex_list: &VertexList) {
+    pub fn create_mesh(
+        &mut self,
+        key: impl Into<String>,
+        vertex_layout: Rc<VertexLayout>,
+        vertex_list: &VertexList,
+    ) {
         // Create the vertex buffer
         let vertex_buffer = Buffer::__from_slice(vertex_list.vertex_data(), Some(vertex_layout));
 

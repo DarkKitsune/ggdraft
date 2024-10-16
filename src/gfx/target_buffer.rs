@@ -2,7 +2,9 @@ use anyhow::Result;
 use ggmath::prelude::*;
 
 use super::{
-    input_layout::{InputLayout, VERTEX_BUFFER_LOCATION}, mesh::Mesh, program::Program
+    input_layout::{InputLayout, VERTEX_BUFFER_LOCATION},
+    mesh::Mesh,
+    program::Program,
 };
 
 /// Represents a GL buffer for rendering to.

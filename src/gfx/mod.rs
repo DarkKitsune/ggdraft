@@ -1,13 +1,13 @@
 pub mod buffer;
 pub mod gfx_cache;
 pub mod input_layout;
+pub mod mesh;
 pub mod program;
 pub mod shader;
 pub mod shader_gen;
 pub mod target_buffer;
 pub mod vertex_layout;
 pub mod vertex_list;
-pub mod mesh;
 
 use std::{
     cell::{Cell, RefCell},

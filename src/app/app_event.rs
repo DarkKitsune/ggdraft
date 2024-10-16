@@ -22,9 +22,11 @@ pub fn graphics_init(
     let rectangle = Rectangle::new_z(Vector3::zero(), vector!(1.0, 0.5), RED);
 
     // Create vertex layout describing the vertices going into the shader
-    let vertex_layout = Rc::new(VertexLayout::new()
-        .with_input(VertexInput::Position)
-        .with_input(VertexInput::Color));
+    let vertex_layout = Rc::new(
+        VertexLayout::new()
+            .with_input(VertexInput::Position)
+            .with_input(VertexInput::Color),
+    );
 
     // Create vertex list
     let vertex_list = VertexList::from_shape(vertex_layout.clone(), &rectangle)?;
