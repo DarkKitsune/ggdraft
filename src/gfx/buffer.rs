@@ -10,15 +10,17 @@ pub struct Buffer<T> {
     _phantom: std::marker::PhantomData<T>,
 }
 
-pub type VertexBuffer = Buffer<VertexComponent>;
-pub type IndexBuffer = Buffer<u32>;
-
 impl<T> !Send for Buffer<T> {}
 impl<T> !Sync for Buffer<T> {}
 
+pub type VertexBuffer = Buffer<VertexComponent>;
+pub type IndexBuffer = Buffer<u32>;
+
 impl<T> Buffer<T> {
     /// Create a new buffer with the given length (in elements, not bytes).
-    pub(crate) fn __from_slice(data: &[T], vertex_layout: Option<Rc<VertexLayout>>) -> Self {
+    /// # Safety
+    /// This function is unsafe because it should only be used on the main thread.
+    pub(crate) unsafe fn __from_slice(data: &[T], vertex_layout: Option<Rc<VertexLayout>>) -> Self {
         let mut handle = 0;
         let length = data.len();
 

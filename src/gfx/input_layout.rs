@@ -28,8 +28,10 @@ impl !Sync for InputLayout {}
 
 impl InputLayout {
     /// Create a new vertex array from the given vertex layout.
+    /// # Safety
+    /// This function is unsafe because it should only be used on the main thread.
     // TODO: Add instancing support.
-    pub(crate) fn __from_vertex_layout(layout: Rc<VertexLayout>) -> Self {
+    pub(crate) unsafe fn __from_vertex_layout(layout: Rc<VertexLayout>) -> Self {
         let mut handle = 0;
 
         unsafe {

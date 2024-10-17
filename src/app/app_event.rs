@@ -1,9 +1,6 @@
 use std::rc::Rc;
 
-use crate::gfx::{
-    vertex_layout::{VertexInput, VertexLayout},
-    vertex_list::VertexList,
-};
+use crate::gfx::vertex_layout::{VertexInput, VertexLayout};
 
 use super::app_prelude::*;
 

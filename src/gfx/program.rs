@@ -14,7 +14,9 @@ impl !Sync for Program {}
 
 impl Program {
     /// Creates a new program
-    pub(crate) fn __new(shaders: &[Shader]) -> Result<Self> {
+    /// # Safety
+    /// This function is unsafe because it should only be used on the main thread.
+    pub(crate) unsafe fn __new(shaders: &[Shader]) -> Result<Self> {
         // Create program
         let handle = unsafe { gl::CreateProgram() };
 

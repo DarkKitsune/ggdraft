@@ -13,7 +13,9 @@ impl !Sync for Shader {}
 
 impl Shader {
     /// Creates a new shader
-    pub(crate) fn __new(stage: ShaderStage, source: &str) -> Result<Self> {
+    /// # Safety
+    /// This function is unsafe because it should only be used on the main thread.
+    pub(crate) unsafe fn __new(stage: ShaderStage, source: &str) -> Result<Self> {
         // Create shader
         let handle = unsafe { gl::CreateShader(stage.to_gl_enum()) };
 

@@ -8,6 +8,7 @@ pub mod shader_gen;
 pub mod target_buffer;
 pub mod vertex_layout;
 pub mod vertex_list;
+pub mod texture;
 
 use std::{
     cell::{Cell, RefCell},
@@ -134,7 +135,7 @@ impl Gfx {
         // Get a thread-local reference to the graphics cache.
         CACHE.with(|cache| {
             // Initialize the graphics cache.
-            cache.replace(Some(GfxCache::new()));
+            cache.replace(Some(unsafe { GfxCache::new() }));
         });
     }
 

@@ -23,7 +23,9 @@ pub struct GfxCache {
 
 impl GfxCache {
     /// Create a new GfxCache
-    pub(crate) fn new() -> Self {
+    /// # Safety
+    /// This function is unsafe because it should only be used on the main thread.
+    pub(crate) unsafe fn new() -> Self {
         Self {
             objects: HashMap::new(),
         }
@@ -47,7 +49,7 @@ impl GfxCache {
     /// Create a new buffer with the given length in the cache.
     pub fn create_buffer_from_slice<T: 'static>(&mut self, key: impl Into<String>, data: &[T]) {
         // Create the buffer
-        let buffer = Buffer::__from_slice(data, None);
+        let buffer = unsafe { Buffer::__from_slice(data, None) };
 
         // Insert the buffer into the cache
         self.insert(key, buffer);
@@ -64,10 +66,10 @@ impl GfxCache {
         let vertex_list = vertex_list.into_vertex_list(vertex_layout.clone());
 
         // Create the vertex buffer
-        let vertex_buffer = Buffer::__from_slice(vertex_list.vertex_data(), Some(vertex_layout));
+        let vertex_buffer = unsafe { Buffer::__from_slice(vertex_list.vertex_data(), Some(vertex_layout)) };
 
         // Create the index buffer
-        let index_buffer = Buffer::__from_slice(vertex_list.indices(), None);
+        let index_buffer = unsafe { Buffer::__from_slice(vertex_list.indices(), None) };
 
         // Create the mesh in the cache
         self.insert(key, Mesh::new(vertex_buffer, index_buffer));
@@ -92,11 +94,11 @@ impl GfxCache {
         // Generate the vertex and fragment shaders
         let (vertex_code, fragment_code) =
             input_layout.generate_vertex_fragment_shaders(vertex, fragment)?;
-        let vertex_shader = Shader::__new(ShaderStage::Vertex, &vertex_code)?;
-        let fragment_shader = Shader::__new(ShaderStage::Fragment, &fragment_code)?;
+        let vertex_shader = unsafe { Shader::__new(ShaderStage::Vertex, &vertex_code)? };
+        let fragment_shader = unsafe { Shader::__new(ShaderStage::Fragment, &fragment_code)? };
 
         // Create the program from the shaders
-        let program = Program::__new(&[vertex_shader, fragment_shader])?;
+        let program = unsafe { Program::__new(&[vertex_shader, fragment_shader])? };
 
         // Insert the program into the cache
         self.insert(key, program);
@@ -110,7 +112,7 @@ impl GfxCache {
         key: impl Into<String>,
         vertex_layout: Rc<VertexLayout>,
     ) {
-        let input_layout = InputLayout::__from_vertex_layout(vertex_layout);
+        let input_layout = unsafe { InputLayout::__from_vertex_layout(vertex_layout) };
         self.insert(key, input_layout);
     }
 

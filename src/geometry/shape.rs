@@ -110,7 +110,7 @@ impl ShapeTriangles {
     }
 
     /// Convert this `ShapeTriangles` into a `VertexList` using the given layout.
-    pub fn into_vertex_list(self, layout: Rc<VertexLayout>) -> Result<VertexList> {
+    pub(crate) fn into_vertex_list(self, layout: Rc<VertexLayout>) -> Result<VertexList> {
         VertexList::new(
             layout,
             &[

@@ -9,5 +9,6 @@ gl = "0.14.0"
 ggmath = { path = "../ggmath" }
 ggutil = { path = "../ggutil" }
 app-weaver = { path = "../app-weaver" }
-tokio = { version = "1.39.3", features = ["full"] }
-anyhow = "1.0.86"
+tokio = { version = "1.40.0", features = ["full"] }
+anyhow = "1.0.89"
+image = "0.25.4"
