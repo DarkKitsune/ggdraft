@@ -3,7 +3,7 @@ use ggmath::prelude::*;
 
 use super::{
     input_layout::{InputLayout, VERTEX_BUFFER_LOCATION},
-    input_parameters::InputParameters,
+    input_parameters::RenderParameters,
     mesh::Mesh,
     program::Program,
 };
@@ -42,16 +42,16 @@ impl TargetBuffer {
         }
     }
 
-    /// Render triangles to the buffer using the given vertices.
+    /// Render a mesh to this buffer.
     pub fn render_mesh(
         &self,
         program: &Program,
-        mesh_buffers: &Mesh,
         input_layout: &InputLayout,
-        input_parameters: &InputParameters,
+        parameters: &RenderParameters,
+        mesh: &Mesh,
     ) -> Result<()> {
-        let vertex_buffer = &mesh_buffers.vertex_buffer;
-        let index_buffer = &mesh_buffers.index_buffer;
+        let vertex_buffer = &mesh.vertex_buffer;
+        let index_buffer = &mesh.index_buffer;
 
         // Get the index count.
         let index_count = index_buffer.len();
@@ -88,7 +88,7 @@ impl TargetBuffer {
             gl::UseProgram(program.handle());
 
             // Use the parameters.
-            program.use_parameters(input_parameters)?;
+            program.use_parameters(parameters)?;
 
             // Draw call.
             gl::DrawElements(

@@ -68,27 +68,10 @@ pub fn graphics_init(
         },
     )?;
 
-    Ok(())
-}
-
-// Called before the engine thinks
-pub fn pre_think(_app_data: AppData<Data>) -> AppEventResult<()> {
-    Ok(())
-}
-
-// Called after the engine thinks
-pub fn post_think(_app_data: AppData<Data>) -> AppEventResult<()> {
-    Ok(())
-}
-
-// Called when the engine renders a frame
-pub fn render(
-    _app_data: AppData<Data>,
-    graphics_cache: &mut GfxCache,
-    framebuffer: TargetBuffer,
-) -> AppEventResult<()> {
-    // Mesh
-    graphics_cache.inline_mesh("mesh", "vertex layout", || {
+    // Create the mesh
+    graphics_cache.create_mesh(
+        "mesh",
+        "vertex layout",
         vec![
             Rectangle::default()
                 .with_center(vector!(0.1, 0.2, 0.0))
@@ -108,16 +91,31 @@ pub fn render(
                 .with_size(vector!(1.2, 0.7))
                 .with_color(WHITE.lerp(&BLUE, 0.5))
                 .with_tex_coords(vector!(0.5, 0.0), vector!(1.0, 1.0)),
-        ]
-    });
+        ],
+    );
 
-    // Texture
-    graphics_cache.inline_texture_view_from_file(
-        "texture",
-        TextureType::Color,
-        "assets/texture.png",
-    )?;
+    // Create the texture
+    graphics_cache.create_texture_from_file("texture", TextureType::Color, "assets/texture.png")?;
 
+    Ok(())
+}
+
+// Called before the engine thinks
+pub fn pre_think(_app_data: AppData<Data>) -> AppEventResult<()> {
+    Ok(())
+}
+
+// Called after the engine thinks
+pub fn post_think(_app_data: AppData<Data>) -> AppEventResult<()> {
+    Ok(())
+}
+
+// Called when the engine renders a frame
+pub fn render(
+    _app_data: AppData<Data>,
+    graphics_cache: &mut GfxCache,
+    framebuffer: TargetBuffer,
+) -> AppEventResult<()> {
     // Clear color is a mix of blue, gray, and white
     let clear_color = BLUE // Start with blue
         .lerp(&GRAY, 0.5) // Mix 50% with gray
@@ -126,20 +124,20 @@ pub fn render(
     // Clear the framebuffer with the clear color.
     framebuffer.clear_with_color(clear_color);
 
-    // Retrieve the program, mesh, and input layout
+    // Retrieve the program and input layout
     let program = graphics_cache.get("program").unwrap();
-    let mesh = graphics_cache.get("mesh").unwrap();
     let input_layout = graphics_cache.get("input layout").unwrap();
 
-    // Retrieve a view of the texture
+    // Retrieve the mesh and texture
+    let mesh = graphics_cache.get("mesh").unwrap();
     let texture_view = graphics_cache.get_texture_view("texture").unwrap();
 
     // Set the parameters for rendering
-    let mut parameters = InputParameters::new();
+    let mut parameters = RenderParameters::new();
     parameters.set("color_texture", texture_view);
 
     // Draw the triangle
-    framebuffer.render_mesh(program, mesh, input_layout, &parameters)?;
+    framebuffer.render_mesh(program, input_layout, &parameters, &mesh)?;
 
     Ok(())
 }

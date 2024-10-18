@@ -65,27 +65,6 @@ impl GfxCache {
         self.insert(key, vertex_layout);
     }
 
-    /// Returns the vertex layout if it already exists.
-    /// Otherwise, creates a new vertex layout from the given function,
-    /// and inserts it into the cache.
-    /// The actual type in the cache is `Rc<VertexLayout>`.
-    pub fn inline_vertex_layout(
-        &mut self,
-        key: impl AsRef<str>,
-        f: impl FnOnce() -> VertexLayout,
-    ) -> &VertexLayout {
-        let key = key.as_ref();
-
-        if self.contains::<Rc<VertexLayout>>(key) {
-            // Get the vertex layout if it already exists
-            self.get(key).unwrap()
-        } else {
-            // Create the vertex layout if it does not exist
-            self.create_vertex_layout(key, f);
-            self.get(key).unwrap()
-        }
-    }
-
     /// Create a new buffer in the cache.
     pub fn create_buffer_from_slice<T: 'static>(&mut self, key: impl Into<String>, data: &[T]) {
         // Create the buffer
@@ -93,26 +72,6 @@ impl GfxCache {
 
         // Insert the buffer into the cache
         self.insert(key, buffer);
-    }
-
-    /// Returns the buffer if it already exists.
-    /// Otherwise, creates a new buffer from the given function,
-    /// and inserts it into the cache.
-    pub fn inline_buffer<T: 'static>(
-        &mut self,
-        key: impl AsRef<str>,
-        f: impl FnOnce() -> Vec<T>,
-    ) -> &Buffer<T> {
-        let key = key.as_ref();
-
-        if self.contains::<Buffer<T>>(key) {
-            // Get the buffer if it already exists
-            self.get(key).unwrap()
-        } else {
-            // Create the buffer if it does not exist
-            self.create_buffer_from_slice(key, &f());
-            self.get(key).unwrap()
-        }
     }
 
     /// Create a new texture in the cache from the given file path.
@@ -145,27 +104,6 @@ impl GfxCache {
         Ok(())
     }
 
-    /// Returns the texture if it already exists.
-    /// Otherwise, creates a new texture from the given path,
-    /// and inserts it into the cache.
-    pub fn inline_texture_view_from_file(
-        &mut self,
-        key: impl AsRef<str>,
-        texture_type: TextureType,
-        path: impl AsRef<Path>,
-    ) -> Result<TextureView> {
-        let key = key.as_ref();
-
-        if self.contains::<Texture>(key) {
-            // Get the texture if it already exists
-            Ok(self.get_texture_view(key).unwrap())
-        } else {
-            // Create the texture if it does not exist
-            self.create_texture_from_file(key, texture_type, path)?;
-            Ok(self.get_texture_view(key).unwrap())
-        }
-    }
-
     /// Create a new mesh in the cache from the given vertex list.
     pub fn create_mesh<'a>(
         &mut self,
@@ -188,27 +126,6 @@ impl GfxCache {
 
         // Create the mesh in the cache
         self.insert(key, Mesh::new(vertex_buffer, index_buffer));
-    }
-
-    /// Returns the mesh if it already exists.
-    /// Otherwise, creates a new mesh from the given function,
-    /// and inserts it into the cache.
-    pub fn inline_mesh<'a, V: IntoVertexList<'a>>(
-        &mut self,
-        key: impl AsRef<str>,
-        vertex_layout_key: impl AsRef<str>,
-        f: impl FnOnce() -> V,
-    ) -> &Mesh {
-        let key = key.as_ref();
-
-        if self.contains::<Mesh>(key) {
-            // Get the mesh if it already exists
-            self.get(key).unwrap()
-        } else {
-            // Create the mesh if it does not exist
-            self.create_mesh(key, vertex_layout_key, f());
-            self.get(key).unwrap()
-        }
     }
 
     /// Create a new program in the cache using the given input layout.
@@ -244,28 +161,6 @@ impl GfxCache {
         Ok(())
     }
 
-    /// Returns the program if it already exists.
-    /// Otherwise, creates a new program from the given functions, and inserts it into the cache.
-    /// The program's vertex and fragment shaders are generated using the callbacks.
-    pub fn inline_program_vertex_fragment(
-        &mut self,
-        key: impl AsRef<str>,
-        input_layout_key: impl AsRef<str>,
-        vertex: impl FnOnce(&ShaderInputs, &mut ShaderParameters, &mut ShaderOutputs) -> Result<()>,
-        fragment: impl FnOnce(&ShaderInputs, &mut ShaderParameters, &mut ShaderOutputs) -> Result<()>,
-    ) -> Result<&Program> {
-        let key = key.as_ref();
-
-        if self.contains::<Program>(key) {
-            // Get the program if it already exists
-            Ok(self.get(key).unwrap())
-        } else {
-            // Create the program if it does not exist
-            self.create_program_vertex_fragment(key, input_layout_key, vertex, fragment)?;
-            Ok(self.get(key).unwrap())
-        }
-    }
-
     /// Create a new input layout in the cache from the given vertex layout.
     pub fn create_input_layout_from_vertex_layout(
         &mut self,
@@ -278,26 +173,6 @@ impl GfxCache {
         // Create the input layout
         let input_layout = unsafe { InputLayout::__from_vertex_layout(vertex_layout) };
         self.insert(key, input_layout);
-    }
-
-    /// Returns the input layout if it already exists.
-    /// Otherwise, creates a new input layout from the given vertex layout,
-    /// and inserts it into the cache.
-    pub fn inline_input_layout_from_vertex_layout(
-        &mut self,
-        key: impl AsRef<str>,
-        vertex_layout_key: impl AsRef<str>,
-    ) -> &InputLayout {
-        let key = key.as_ref();
-
-        if self.contains::<InputLayout>(key) {
-            // Get the input layout if it already exists
-            self.get(key).unwrap()
-        } else {
-            // Create the input layout if it does not exist
-            self.create_input_layout_from_vertex_layout(key, vertex_layout_key);
-            self.get(key).unwrap()
-        }
     }
 
     /// Get an object from the cache.
@@ -349,6 +224,30 @@ impl GfxCache {
         let key = key.as_ref();
         self.get::<Buffer<T>>(key)
             .ok_or_else(|| anyhow::anyhow!("Buffer not found: {}", key))
+    }
+
+    /// Get a mesh from the cache.
+    /// Returns an error if the mesh does not exist.
+    pub fn get_mesh(&self, key: impl AsRef<str>) -> Result<&Mesh> {
+        let key = key.as_ref();
+        self.get::<Mesh>(key)
+            .ok_or_else(|| anyhow::anyhow!("Mesh not found: {}", key))
+    }
+
+    /// Get a program from the cache.
+    /// Returns an error if the program does not exist.
+    pub fn get_program(&self, key: impl AsRef<str>) -> Result<&Program> {
+        let key = key.as_ref();
+        self.get::<Program>(key)
+            .ok_or_else(|| anyhow::anyhow!("Program not found: {}", key))
+    }
+
+    /// Get an input layout from the cache.
+    /// Returns an error if the input layout does not exist.
+    pub fn get_input_layout(&self, key: impl AsRef<str>) -> Result<&InputLayout> {
+        let key = key.as_ref();
+        self.get::<InputLayout>(key)
+            .ok_or_else(|| anyhow::anyhow!("Input layout not found: {}", key))
     }
 
     /// Get a `TextureView` of a texture with the given key from the cache.
