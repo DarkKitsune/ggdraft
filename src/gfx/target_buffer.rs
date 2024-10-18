@@ -3,6 +3,7 @@ use ggmath::prelude::*;
 
 use super::{
     input_layout::{InputLayout, VERTEX_BUFFER_LOCATION},
+    input_parameters::InputParameters,
     mesh::Mesh,
     program::Program,
 };
@@ -47,6 +48,7 @@ impl TargetBuffer {
         program: &Program,
         mesh_buffers: &Mesh,
         input_layout: &InputLayout,
+        input_parameters: &InputParameters,
     ) -> Result<()> {
         let vertex_buffer = &mesh_buffers.vertex_buffer;
         let index_buffer = &mesh_buffers.index_buffer;
@@ -84,6 +86,9 @@ impl TargetBuffer {
 
             // Use the program.
             gl::UseProgram(program.handle());
+
+            // Use the parameters.
+            program.use_parameters(input_parameters)?;
 
             // Draw call.
             gl::DrawElements(

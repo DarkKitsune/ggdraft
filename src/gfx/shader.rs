@@ -2,10 +2,13 @@ use std::ffi::CString;
 
 use anyhow::Result;
 
+use crate::app::app_prelude::ShaderParameters;
+
 /// Represents a GL shader
 pub struct Shader {
     handle: u32,
     stage: ShaderStage,
+    parameters: ShaderParameters,
 }
 
 impl !Send for Shader {}
@@ -15,7 +18,11 @@ impl Shader {
     /// Creates a new shader
     /// # Safety
     /// This function is unsafe because it should only be used on the main thread.
-    pub(crate) unsafe fn __new(stage: ShaderStage, source: &str) -> Result<Self> {
+    pub(crate) unsafe fn __new(
+        stage: ShaderStage,
+        source: &str,
+        parameters: ShaderParameters,
+    ) -> Result<Self> {
         // Create shader
         let handle = unsafe { gl::CreateShader(stage.to_gl_enum()) };
 
@@ -54,7 +61,11 @@ impl Shader {
             // Bail with error message
             anyhow::bail!(String::from_utf8(buffer).unwrap());
         }
-        Ok(Self { handle, stage })
+        Ok(Self {
+            handle,
+            stage,
+            parameters,
+        })
     }
 
     /// Get the GL handle
@@ -65,6 +76,11 @@ impl Shader {
     /// Get the shader stage
     pub fn stage(&self) -> ShaderStage {
         self.stage
+    }
+
+    /// Get the parameters
+    pub fn parameters(&self) -> &ShaderParameters {
+        &self.parameters
     }
 }
 

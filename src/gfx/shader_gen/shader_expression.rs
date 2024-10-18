@@ -3,11 +3,15 @@ use std::{cell::RefCell, fmt::Display};
 use anyhow::Result;
 use ggmath::prelude::*;
 
-use super::{shader_inputs::SHADER_INPUT_PREFIX, shader_type::ShaderType};
+use super::{
+    shader_inputs::SHADER_INPUT_PREFIX, shader_parameters::SHADER_UNIFORM_PREFIX,
+    shader_type::ShaderType,
+};
 
 /// Represents a shader operation within a shader expression.
 pub enum ShaderOperation {
     Input(String, ShaderType),
+    Uniform(String, ShaderType),
     I32(i32),
     F32(f32),
     Vec2(ShaderExpression, ShaderExpression),
@@ -39,6 +43,7 @@ pub enum ShaderOperation {
     Cross(ShaderExpression, ShaderExpression),
     Length(ShaderExpression),
     Normalized(ShaderExpression),
+    Sample(ShaderExpression, ShaderExpression, ShaderExpression),
 }
 
 /// Represents a shader expression.
@@ -58,6 +63,7 @@ impl ShaderExpression {
     pub fn shader_type(&self) -> Result<ShaderType> {
         Ok(match &*self.operation.borrow() {
             ShaderOperation::Input(_, value_type) => *value_type,
+            ShaderOperation::Uniform(_, value_type) => *value_type,
             ShaderOperation::I32(_) => ShaderType::I32,
             ShaderOperation::F32(_) => ShaderType::F32,
             ShaderOperation::Vec2(_, _) => ShaderType::Vec2,
@@ -133,7 +139,7 @@ impl ShaderExpression {
             ShaderOperation::Cross(_, _) => ShaderType::Vec3,
             ShaderOperation::Length(_) => ShaderType::F32,
             ShaderOperation::Normalized(expr) => expr.shader_type()?,
-            // _ => unimplemented!("This operation is not implemented yet."),
+            ShaderOperation::Sample(_, _, _) => ShaderType::Vec4,
         })
     }
 }
@@ -210,213 +216,275 @@ impl From<Vector4<i32>> for ShaderExpression {
     }
 }
 
-impl std::ops::Add for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn add(self, other: ShaderExpression) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Add(self, other))
-    }
-}
-
-impl std::ops::Sub for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn sub(self, other: ShaderExpression) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Sub(self, other))
-    }
-}
-
-impl std::ops::Mul for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn mul(self, other: ShaderExpression) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Mul(self, other))
-    }
-}
-
-impl std::ops::Div for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn div(self, other: ShaderExpression) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Div(self, other))
-    }
-}
-
-impl std::ops::Rem for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn rem(self, other: ShaderExpression) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Rem(self, other))
-    }
-}
-
-impl std::ops::Neg for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn neg(self) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Neg(self))
-    }
-}
-
-impl std::ops::Add<f32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn add(self, other: f32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Add(self, ShaderExpression::from(other)))
-    }
-}
-
-impl std::ops::Sub<f32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn sub(self, other: f32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Sub(self, ShaderExpression::from(other)))
-    }
-}
-
-impl std::ops::Mul<f32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn mul(self, other: f32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Mul(self, ShaderExpression::from(other)))
-    }
-}
-
-impl std::ops::Div<f32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn div(self, other: f32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Div(self, ShaderExpression::from(other)))
-    }
-}
-
-impl std::ops::Rem<f32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn rem(self, other: f32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Rem(self, ShaderExpression::from(other)))
-    }
-}
-
-impl std::ops::Add<i32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn add(self, other: i32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Add(self, ShaderExpression::from(other)))
-    }
-}
-
-impl std::ops::Sub<i32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn sub(self, other: i32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Sub(self, ShaderExpression::from(other)))
-    }
-}
-
-impl std::ops::Mul<i32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn mul(self, other: i32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Mul(self, ShaderExpression::from(other)))
-    }
-}
-
-impl std::ops::Div<i32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn div(self, other: i32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Div(self, ShaderExpression::from(other)))
-    }
-}
-
-impl std::ops::Rem<i32> for ShaderExpression {
-    type Output = ShaderExpression;
-
-    fn rem(self, other: i32) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Rem(self, ShaderExpression::from(other)))
-    }
-}
-
 pub trait ShaderMath: Into<ShaderExpression> + Sized {
+    /// Appends two values.
     fn append(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Append(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Get the types of the expressions.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+
+        // Ensure the types are valid for appending.
+        a_type.ensure_math_compatible(b_type, "append").unwrap();
+
+        // Ensure that the total component count is less than or equal to 4.
+        let total_components =
+            a_type.component_count().unwrap() + b_type.component_count().unwrap();
+        if total_components > 4 {
+            panic!(
+                "Cannot create vector with more than 4 components: {:?} + {:?} = {} components",
+                a_type, b_type, total_components
+            );
+        }
+
+        ShaderExpression::new(ShaderOperation::Append(a, b))
     }
 
+    /// Adds two values.
     fn add(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Add(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for addition.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        a_type.ensure_math_compatible(b_type, "add").unwrap();
+
+        ShaderExpression::new(ShaderOperation::Add(a, b))
     }
 
+    /// Subtracts two values.
     fn sub(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Sub(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for subtraction.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        a_type.ensure_math_compatible(b_type, "sub").unwrap();
+
+        ShaderExpression::new(ShaderOperation::Sub(a, b))
     }
 
+    /// Multiplies two values.
     fn mul(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Mul(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for multiplication.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        a_type.ensure_math_compatible(b_type, "mul").unwrap();
+
+        ShaderExpression::new(ShaderOperation::Mul(a, b))
     }
 
+    /// Divides two values.
     fn div(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Div(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for division.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        a_type.ensure_math_compatible(b_type, "div").unwrap();
+
+        ShaderExpression::new(ShaderOperation::Div(a, b))
     }
 
+    /// Raises the left side to the power of the right side.
     fn pow(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Pow(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for exponentiation.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        a_type
+            .ensure_vector_or_scalar_f32("left side of 'pow'")
+            .unwrap();
+        b_type
+            .ensure_type(ShaderType::F32, "right side of 'pow'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Pow(a, b))
     }
 
+    /// Returns the remainder of the left side divided by the right side.
     fn rem(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Rem(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for remainder.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        let a_component = a_type
+            .ensure_vector_or_scalar("left side of 'rem'")
+            .unwrap();
+        a_component
+            .ensure_matches(
+                b_type,
+                "component/scalar of left side and right side of 'rem'",
+            )
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Rem(a, b))
     }
 
+    /// Negates the value.
     fn neg(self) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Neg(self.into()))
+        let a: ShaderExpression = self.into();
+
+        // Ensure the type is valid for negation.
+        let a_type = a.shader_type().unwrap();
+        a_type.ensure_vector_or_scalar("operand of 'neg'").unwrap();
+
+        ShaderExpression::new(ShaderOperation::Neg(a))
     }
 
+    /// Returns the absolute value of the value.
     fn abs(self) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Abs(self.into()))
+        let a: ShaderExpression = self.into();
+
+        // Ensure the type is valid for absolute value.
+        let a_type = a.shader_type().unwrap();
+        a_type.ensure_vector_or_scalar("operand of 'abs'").unwrap();
+
+        ShaderExpression::new(ShaderOperation::Abs(a))
     }
 
+    /// Returns the sign of the value.
     fn sign(self) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Sign(self.into()))
+        let a: ShaderExpression = self.into();
+
+        // Ensure the type is valid for sign.
+        let a_type = a.shader_type().unwrap();
+        a_type.ensure_vector_or_scalar("operand of 'sign'").unwrap();
+
+        ShaderExpression::new(ShaderOperation::Sign(a))
     }
 
+    /// Rounds the value down.
     fn floor(self) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Floor(self.into()))
+        let a: ShaderExpression = self.into();
+
+        // Ensure the type is valid for floor.
+        let a_type = a.shader_type().unwrap();
+        a_type
+            .ensure_vector_or_scalar_f32("operand of 'floor'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Floor(a))
     }
 
+    /// Rounds the value up.
     fn ceil(self) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Ceil(self.into()))
+        let a: ShaderExpression = self.into();
+
+        // Ensure the type is valid for ceil.
+        let a_type = a.shader_type().unwrap();
+        a_type
+            .ensure_vector_or_scalar_f32("operand of 'ceil'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Ceil(a))
     }
 
+    /// Rounds the value to the nearest integer.
     fn round(self) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Round(self.into()))
+        let a: ShaderExpression = self.into();
+
+        // Ensure the type is valid for round.
+        let a_type = a.shader_type().unwrap();
+        a_type
+            .ensure_vector_or_scalar_f32("operand of 'round'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Round(a))
     }
 
+    /// Returns the minimum of the two values.
     fn min(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Min(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for min.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        a_type.ensure_math_compatible(b_type, "min").unwrap();
+
+        ShaderExpression::new(ShaderOperation::Min(a, b))
     }
 
+    /// Returns the maximum of the two values.
     fn max(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Max(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for max.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        a_type.ensure_math_compatible(b_type, "max").unwrap();
+
+        ShaderExpression::new(ShaderOperation::Max(a, b))
     }
 
+    /// Clamps a value between the minimum and maximum values.
     fn clamp(
         self,
         min: impl Into<ShaderExpression>,
         max: impl Into<ShaderExpression>,
     ) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Clamp(self.into(), min.into(), max.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = min.into();
+        let c: ShaderExpression = max.into();
+
+        // Ensure the types are valid for clamp.
+        // TODO: Make this accept more types.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        let c_type = c.shader_type().unwrap();
+        a_type
+            .ensure_vector_or_scalar("argument 'self' of 'clamp'")
+            .unwrap();
+        a_type
+            .ensure_matches(b_type, "arguments 'self' and 'min' of 'clamp'")
+            .unwrap();
+        a_type
+            .ensure_matches(c_type, "arguments 'self' and 'max' of 'clamp'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Clamp(a, b, c))
     }
 
+    /// Mixes two values based on the factor.
     fn mix(
         self,
         other: impl Into<ShaderExpression>,
         factor: impl Into<ShaderExpression>,
     ) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Mix(
-            self.into(),
-            other.into(),
-            factor.into(),
-        ))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+        let c: ShaderExpression = factor.into();
+
+        // Ensure the types are valid for mix.
+        // TODO: Make this accept more types.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        let c_type = c.shader_type().unwrap();
+        a_type
+            .ensure_vector_or_scalar_f32("argument 'self' of 'mix'")
+            .unwrap();
+        a_type
+            .ensure_matches(b_type, "arguments 'self' and 'other' of 'mix'")
+            .unwrap();
+        c_type
+            .ensure_type(ShaderType::F32, "argument 'factor' of 'mix'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Mix(a, b, c))
     }
 }
 
@@ -425,20 +493,66 @@ impl ShaderMath for f32 {}
 impl ShaderMath for i32 {}
 
 pub trait ShaderVector: Into<ShaderExpression> + Sized {
+    /// Returns the dot product of the two vectors.
     fn dot(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Dot(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for dot product.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        a_type
+            .ensure_vector_f32("argument 'self' of 'dot'")
+            .unwrap();
+        a_type
+            .ensure_matches(b_type, "arguments 'self' and 'other' of 'dot'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Dot(a, b))
     }
 
+    /// Returns the cross product of the two vectors.
     fn cross(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Cross(self.into(), other.into()))
+        let a: ShaderExpression = self.into();
+        let b: ShaderExpression = other.into();
+
+        // Ensure the types are valid for cross product.
+        let a_type = a.shader_type().unwrap();
+        let b_type: ShaderType = b.shader_type().unwrap();
+        a_type
+            .ensure_vector_f32("argument 'self' of 'cross'")
+            .unwrap();
+        a_type
+            .ensure_matches(b_type, "arguments 'self' and 'other' of 'cross'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Cross(a, b))
     }
 
+    /// Returns the length of the vector.
     fn length(self) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Length(self.into()))
+        let a: ShaderExpression = self.into();
+
+        // Ensure the type is valid for length.
+        let a_type = a.shader_type().unwrap();
+        a_type
+            .ensure_vector_f32("argument 'self' of 'length'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Length(a))
     }
 
+    /// Returns the normalized vector.
     fn normalized(self) -> ShaderExpression {
-        ShaderExpression::new(ShaderOperation::Normalized(self.into()))
+        let a: ShaderExpression = self.into();
+
+        // Ensure the type is valid for normalization.
+        let a_type = a.shader_type().unwrap();
+        a_type
+            .ensure_vector_f32("argument 'self' of 'normalized'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Normalized(a))
     }
 }
 
@@ -450,10 +564,43 @@ impl ShaderVector for Vector3<i32> {}
 impl ShaderVector for Vector4<f32> {}
 impl ShaderVector for Vector4<i32> {}
 
+pub trait ShaderTexture: Into<ShaderExpression> + Sized {
+    /// Samples the texture at the given UV coordinates.
+    fn sample(
+        self,
+        uv: impl Into<ShaderExpression>,
+        level: impl Into<ShaderExpression>,
+    ) -> ShaderExpression {
+        let a = self.into();
+        let b = uv.into();
+        let c = level.into();
+
+        // Ensure the types are valid for sampling.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        let c_type = c.shader_type().unwrap();
+        a_type
+            .ensure_type(ShaderType::Sampler2D, "argument 'self' of 'sample'")
+            .unwrap();
+        // TODO: Make this accept more dimensions of UV coordinates.
+        b_type
+            .ensure_type(ShaderType::Vec2, "argument 'uv' of 'sample'")
+            .unwrap();
+        c_type
+            .ensure_type(ShaderType::I32, "argument 'level' of 'sample'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Sample(a, b, c))
+    }
+}
+
+impl ShaderTexture for ShaderExpression {}
+
 impl Display for ShaderExpression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &*self.operation.borrow() {
             ShaderOperation::Input(name, _) => write!(f, "{}{}", SHADER_INPUT_PREFIX, name),
+            ShaderOperation::Uniform(name, _) => write!(f, "{}{}", SHADER_UNIFORM_PREFIX, name),
             ShaderOperation::I32(value) => write!(f, "{}", value),
             ShaderOperation::F32(value) => write!(f, "{}", value),
             ShaderOperation::Vec2(x, y) => write!(f, "vec2({}, {})", x, y),
@@ -489,6 +636,9 @@ impl Display for ShaderExpression {
             ShaderOperation::Cross(left, right) => write!(f, "cross({}, {})", left, right),
             ShaderOperation::Length(expr) => write!(f, "length({})", expr),
             ShaderOperation::Normalized(expr) => write!(f, "normalize({})", expr),
+            ShaderOperation::Sample(texture, uv, lod) => {
+                write!(f, "textureLod({}, {}, {})", texture, uv, lod)
+            }
         }
     }
 }

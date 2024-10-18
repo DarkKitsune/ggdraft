@@ -5,6 +5,7 @@ use super::{
     shader_type::ShaderType,
 };
 
+/// The prefix for shader input variables.
 pub(crate) const SHADER_INPUT_PREFIX: &str = "input_";
 
 /// Represents a single input to a shader stage.

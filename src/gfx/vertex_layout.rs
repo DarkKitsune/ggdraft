@@ -33,10 +33,10 @@ impl VertexInput {
     /// Get the name of this input.
     pub fn name(&self) -> &str {
         match self {
-            VertexInput::Position => "position",
-            VertexInput::Normal => "normal",
-            VertexInput::Color => "color",
-            VertexInput::TexCoord => "tex_coord",
+            VertexInput::Position => "Position",
+            VertexInput::Normal => "Normal",
+            VertexInput::Color => "Color",
+            VertexInput::TexCoord => "TexCoord",
         }
     }
 

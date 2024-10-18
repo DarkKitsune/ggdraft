@@ -21,6 +21,8 @@ pub struct ShapeTriangles {
     normals: Vec<Vector3<f32>>,
     /// The colors of the vertices.
     colors: Vec<Vector4<f32>>,
+    /// The texture coordinates of the vertices.
+    tex_coords: Vec<Vector2<f32>>,
     /// The indices of the vertices that make up the triangles.
     indices: Vec<u32>,
 }
@@ -34,12 +36,14 @@ impl ShapeTriangles {
         positions: Vec<Vector3<f32>>,
         normals: Vec<Vector3<f32>>,
         colors: Vec<Vector4<f32>>,
+        tex_coords: Vec<Vector2<f32>>,
         indices: Vec<u32>,
     ) -> Self {
         Self {
             positions,
             normals,
             colors,
+            tex_coords,
             indices,
         }
     }
@@ -49,11 +53,15 @@ impl ShapeTriangles {
         positions: Vec<Vector3<f32>>,
         normals: Vec<Vector3<f32>>,
         colors: Vec<Vector4<f32>>,
+        tex_coords: Vec<Vector2<f32>>,
         indices: Vec<u32>,
     ) -> Result<Self> {
-        // Ensure that the positions, normals, and colors have the same length.
-        if positions.len() != normals.len() || positions.len() != colors.len() {
-            anyhow::bail!("The positions, normals, and colors must have the same length.");
+        // Ensure that the attributes have the same length.
+        if positions.len() != normals.len()
+            || positions.len() != colors.len()
+            || positions.len() != tex_coords.len()
+        {
+            anyhow::bail!("Atrribute vectors must have the same length.");
         }
 
         // Ensure that the number of indices is a multiple of 3.
@@ -71,7 +79,19 @@ impl ShapeTriangles {
             }
         }
 
-        Ok(unsafe { Self::new_unchecked(positions, normals, colors, indices) })
+        Ok(unsafe { Self::new_unchecked(positions, normals, colors, tex_coords, indices) })
+    }
+
+    /// Creates an empty `ShapeTriangles`.
+    /// This is useful for appending shapes.
+    pub fn empty() -> Result<Self> {
+        Ok(Self {
+            positions: Vec::new(),
+            normals: Vec::new(),
+            colors: Vec::new(),
+            tex_coords: Vec::new(),
+            indices: Vec::new(),
+        })
     }
 
     /// Appends the triangles from another shape to this shape.
@@ -80,6 +100,7 @@ impl ShapeTriangles {
         self.positions.append(&mut other.positions);
         self.normals.append(&mut other.normals);
         self.colors.append(&mut other.colors);
+        self.tex_coords.append(&mut other.tex_coords);
         self.indices
             .append(&mut other.indices.iter().map(|i| i + offset).collect());
     }
@@ -117,6 +138,7 @@ impl ShapeTriangles {
                 VertexListInput::Position(&self.positions),
                 VertexListInput::Normal(&self.normals),
                 VertexListInput::Color(&self.colors),
+                VertexListInput::TexCoord(&self.tex_coords),
             ],
             self.indices,
         )
@@ -135,8 +157,7 @@ where
     T: ShapeToTriangles,
 {
     fn to_triangles(&self) -> ShapeTriangles {
-        let mut triangles =
-            ShapeTriangles::new(Vec::new(), Vec::new(), Vec::new(), Vec::new()).unwrap();
+        let mut triangles = ShapeTriangles::empty().unwrap();
 
         for shape in self {
             let mut shape_triangles = shape.to_triangles();
@@ -153,6 +174,10 @@ pub struct Rectangle {
     pub orientation: Orientation,
     /// The color of the rectangle.
     pub color: Vector4<f32>,
+    /// The texture coordinates at the negative x, negative y corner.
+    pub tex_coord_min: Vector2<f32>,
+    /// The texture coordinates at the positive x, positive y corner.
+    pub tex_coord_max: Vector2<f32>,
 }
 
 impl Rectangle {
@@ -166,13 +191,20 @@ impl Rectangle {
         Self {
             orientation: Orientation::new(center, rotation, vector!(size.x(), size.y(), 1.0)),
             color,
+            tex_coord_min: Vector::zero(),
+            tex_coord_max: Vector::one(),
         }
     }
 
     /// Creates a new rectangle using the given orientation.
     /// The size of the rectangle will be the orientation's scale.
     pub fn from_orientation(orientation: Orientation, color: Vector4<f32>) -> Self {
-        Self { orientation, color }
+        Self {
+            orientation,
+            color,
+            tex_coord_min: Vector::zero(),
+            tex_coord_max: Vector::one(),
+        }
     }
 
     /// Sets the center of the rectangle.
@@ -211,6 +243,13 @@ impl Rectangle {
         self.color = color;
         self
     }
+
+    /// Sets the texture coordinates of the rectangle.
+    pub fn with_tex_coords(mut self, min: Vector2<f32>, max: Vector2<f32>) -> Self {
+        self.tex_coord_min = min;
+        self.tex_coord_max = max;
+        self
+    }
 }
 
 impl Default for Rectangle {
@@ -245,12 +284,22 @@ impl ShapeToTriangles for Rectangle {
             (matrix * vector!(-half_size.x(), half_size.y(), 0.0, 1.0)).xyz(),
         ];
 
-        // Calculate the normals, colors, and indices.
+        // Calculate the normals and colors.
         let normal = (matrix * vector!(0.0, 0.0, 1.0, 1.0)).xyz().normalized();
         let normals = vec![normal; 4];
         let colors = vec![self.color; 4];
+
+        // Calculate the texture coordinates.
+        let tex_coords = vec![
+            self.tex_coord_min,
+            vector!(self.tex_coord_max.x(), self.tex_coord_min.y()),
+            self.tex_coord_max,
+            vector!(self.tex_coord_min.x(), self.tex_coord_max.y()),
+        ];
+
+        // Create the indices.
         let indices = vec![0, 1, 2, 0, 2, 3];
 
-        unsafe { ShapeTriangles::new_unchecked(positions, normals, colors, indices) }
+        unsafe { ShapeTriangles::new_unchecked(positions, normals, colors, tex_coords, indices) }
     }
 }

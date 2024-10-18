@@ -8,6 +8,7 @@ use super::{
     shader_gen::{
         shader_inputs::{ShaderInput, ShaderInputs, SHADER_INPUT_PREFIX},
         shader_outputs::{ShaderOutputs, SHADER_OUTPUT_PREFIX},
+        shader_parameters::{ShaderParameters, SHADER_UNIFORM_PREFIX},
     },
     vertex_layout::VertexLayout,
 };
@@ -86,25 +87,31 @@ impl InputLayout {
     /// Generate GLSL vertex and fragment shader code for the input layout.
     pub(crate) fn generate_vertex_fragment_shaders(
         &self,
-        vertex: impl FnOnce(&ShaderInputs, &mut ShaderOutputs) -> Result<()>,
-        fragment: impl FnOnce(&ShaderInputs, &mut ShaderOutputs) -> Result<()>,
-    ) -> Result<(String, String)> {
+        vertex: impl FnOnce(&ShaderInputs, &mut ShaderParameters, &mut ShaderOutputs) -> Result<()>,
+        fragment: impl FnOnce(&ShaderInputs, &mut ShaderParameters, &mut ShaderOutputs) -> Result<()>,
+    ) -> Result<(String, ShaderParameters, String, ShaderParameters)> {
         // Create the vertex shader and fragment shader inputs.
-        let (vertex_shader, fragment_inputs) = self
+        let (vertex_shader, fragment_inputs, vertex_parameters) = self
             .__generate_vertex_shader(vertex)
             .map_err(|e| anyhow::anyhow!("Failed to generate vertex shader: {}", e))?;
-        let fragment_shader = self
+        let (fragment_shader, fragment_parameters) = self
             .__generate_fragment_shader(fragment_inputs, fragment)
             .map_err(|e| anyhow::anyhow!("Failed to generate fragment shader: {}", e))?;
-        Ok((vertex_shader, fragment_shader))
+
+        Ok((
+            vertex_shader,
+            vertex_parameters,
+            fragment_shader,
+            fragment_parameters,
+        ))
     }
 
     /// Generate a GLSL vertex shader for the input layout.
     /// Also returns the inputs for the corresponding fragment shader.
     pub(crate) fn __generate_vertex_shader(
         &self,
-        f: impl FnOnce(&ShaderInputs, &mut ShaderOutputs) -> Result<()>,
-    ) -> Result<(String, ShaderInputs)> {
+        f: impl FnOnce(&ShaderInputs, &mut ShaderParameters, &mut ShaderOutputs) -> Result<()>,
+    ) -> Result<(String, ShaderInputs, ShaderParameters)> {
         // Create the shader inputs from the vertex layout's inputs.
         let mut location = 0;
         let inputs = ShaderInputs::with_inputs(
@@ -126,11 +133,14 @@ impl InputLayout {
                 .collect(),
         )?;
 
+        // Create the shader parameters.
+        let mut parameters = ShaderParameters::new();
+
         // Create the shader outputs.
         let mut outputs = ShaderOutputs::new(ShaderStage::Vertex);
 
         // Call the closure to generate the shader code.
-        f(&inputs, &mut outputs)?;
+        f(&inputs, &mut parameters, &mut outputs)?;
 
         // Generate the shader code.
         let mut code = "#version 450\n".to_string();
@@ -143,6 +153,16 @@ impl InputLayout {
                 input.value_type().glsl_name(),
                 SHADER_INPUT_PREFIX,
                 input.name()
+            );
+        }
+
+        // Add the uniforms from the shader parameters.
+        for parameter in parameters.iter() {
+            code += &format!(
+                "uniform {} {}{};\n",
+                parameter.value_type().glsl_name(),
+                SHADER_UNIFORM_PREFIX,
+                parameter.name()
             );
         }
 
@@ -203,7 +223,7 @@ impl InputLayout {
         )
         .map_err(|e| anyhow::anyhow!("Failed to link fragment inputs to vertex outputs: {}", e))?;
 
-        Ok((code, fragment_inputs))
+        Ok((code, fragment_inputs, parameters))
     }
 
     /// Generate a GLSL fragment shader for the input layout.
@@ -211,13 +231,16 @@ impl InputLayout {
     pub(crate) fn __generate_fragment_shader(
         &self,
         inputs: ShaderInputs,
-        f: impl FnOnce(&ShaderInputs, &mut ShaderOutputs) -> Result<()>,
-    ) -> Result<String> {
+        f: impl FnOnce(&ShaderInputs, &mut ShaderParameters, &mut ShaderOutputs) -> Result<()>,
+    ) -> Result<(String, ShaderParameters)> {
+        // Create the shader parameters.
+        let mut parameters = ShaderParameters::new();
+
         // Create the shader outputs.
         let mut outputs = ShaderOutputs::new(ShaderStage::Fragment);
 
         // Call the closure to generate the shader code.
-        f(&inputs, &mut outputs)?;
+        f(&inputs, &mut parameters, &mut outputs)?;
 
         // Generate the shader code.
         let mut code = "#version 450\n".to_string();
@@ -230,6 +253,16 @@ impl InputLayout {
                 input.value_type().glsl_name(),
                 SHADER_INPUT_PREFIX,
                 input.name()
+            );
+        }
+
+        // Add the uniforms from the shader parameters.
+        for parameter in parameters.iter() {
+            code += &format!(
+                "uniform {} {}{};\n",
+                parameter.value_type().glsl_name(),
+                SHADER_UNIFORM_PREFIX,
+                parameter.name()
             );
         }
 
@@ -273,7 +306,7 @@ impl InputLayout {
         // End the main function.
         code += "}\n";
 
-        Ok(code)
+        Ok((code, parameters))
     }
 }
 
