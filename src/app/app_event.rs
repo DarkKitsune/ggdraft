@@ -1,7 +1,4 @@
-use crate::gfx::{
-    texture::TextureView,
-    vertex_layout::{VertexInput, VertexLayout},
-};
+use crate::gfx::{texture::TextureView, vertex_layout::VertexInput};
 
 use super::app_prelude::*;
 
@@ -17,8 +14,8 @@ pub fn graphics_init(
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
     // Create vertex layout describing the vertices going into the shader
-    graphics_cache.create_vertex_layout("vertex layout", || {
-        VertexLayout::new()
+    graphics_cache.create_vertex_layout("vertex layout", |layout| {
+        layout
             .with_position()
             .with_color()
             .with_normal()

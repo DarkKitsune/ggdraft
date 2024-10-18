@@ -56,21 +56,24 @@ impl GfxCache {
     pub fn create_vertex_layout(
         &mut self,
         key: impl Into<String>,
-        f: impl FnOnce() -> VertexLayout,
+        f: impl FnOnce(VertexLayout) -> VertexLayout,
     ) {
-        // Create the vertex layout
-        let vertex_layout = Rc::new(f());
+        // Create the vertex layout.
+        let vertex_layout = Rc::new(f(unsafe { VertexLayout::__new() }));
 
-        // Insert the vertex layout into the cache
+        // Validate the vertex layout.
+        vertex_layout.validate().unwrap();
+
+        // Insert the vertex layout into the cache.
         self.insert(key, vertex_layout);
     }
 
     /// Create a new buffer in the cache.
     pub fn create_buffer_from_slice<T: 'static>(&mut self, key: impl Into<String>, data: &[T]) {
-        // Create the buffer
+        // Create the buffer.
         let buffer = unsafe { Buffer::__from_slice(data, None) };
 
-        // Insert the buffer into the cache
+        // Insert the buffer into the cache.
         self.insert(key, buffer);
     }
 
@@ -85,20 +88,20 @@ impl GfxCache {
     ) -> Result<()> {
         let path = path.as_ref();
 
-        // Get the file name from the path without the extension
+        // Get the file name from the path without the extension.
         let name = path
             .file_stem()
             .and_then(|s| s.to_str())
             .ok_or_else(|| anyhow::anyhow!("Invalid path {:?}", path))?;
 
-        // Open the image file
+        // Open the image file.
         let image = image::open(path)
             .map_err(|e| anyhow::anyhow!("Failed to open image file {:?}: {:?}", path, e))?;
 
-        // Create the texture
+        // Create the texture.
         let texture = unsafe { Texture::__from_image(name, texture_type, &[image])? };
 
-        // Insert the texture into the cache
+        // Insert the texture into the cache.
         self.insert(key, texture);
 
         Ok(())
@@ -111,20 +114,20 @@ impl GfxCache {
         vertex_layout_key: impl AsRef<str>,
         vertex_list: impl IntoVertexList<'a>,
     ) {
-        // Get the vertex layout from the cache
+        // Get the vertex layout from the cache.
         let vertex_layout = self.get_vertex_layout(vertex_layout_key).unwrap();
 
-        // Get the vertex list
+        // Get the vertex list.
         let vertex_list = vertex_list.into_vertex_list(vertex_layout.clone());
 
-        // Create the vertex buffer
+        // Create the vertex buffer.
         let vertex_buffer =
             unsafe { Buffer::__from_slice(vertex_list.vertex_data(), Some(vertex_layout)) };
 
-        // Create the index buffer
+        // Create the index buffer.
         let index_buffer = unsafe { Buffer::__from_slice(vertex_list.indices(), None) };
 
-        // Create the mesh in the cache
+        // Create the mesh in the cache.
         self.insert(key, Mesh::new(vertex_buffer, index_buffer));
     }
 

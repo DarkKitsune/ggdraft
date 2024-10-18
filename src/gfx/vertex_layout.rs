@@ -74,7 +74,9 @@ pub struct VertexLayout {
 
 impl VertexLayout {
     /// Create a new empty vertex layout.
-    pub(crate) fn new() -> Self {
+    /// # Safety
+    /// This function is unsafe because it creates a new vertex layout without validating it.
+    pub(crate) unsafe fn __new() -> Self {
         Self {
             inputs: Vec::new(),
             component_stride: 0,
