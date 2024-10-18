@@ -92,9 +92,6 @@ impl VertexList {
         inputs: &[VertexListInput],
         indices: Vec<u32>,
     ) -> Result<Self> {
-        // Validate the layout first.
-        layout.validate()?;
-
         // Ensure all inputs have the same length.
         let len = inputs[0].len();
         for input in inputs.iter().skip(1) {
@@ -171,5 +168,11 @@ impl<'a> IntoVertexList<'a> for &'a VertexList {
 impl<'a, T: ShapeToTriangles> IntoVertexList<'a> for &'a T {
     fn into_vertex_list(self, layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList> {
         MaybeOwned::Owned(VertexList::from_shape(layout, self).unwrap())
+    }
+}
+
+impl<'a, T: ShapeToTriangles> IntoVertexList<'a> for Vec<T> {
+    fn into_vertex_list(self, layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList> {
+        MaybeOwned::Owned(VertexList::from_shape(layout, &self).unwrap())
     }
 }

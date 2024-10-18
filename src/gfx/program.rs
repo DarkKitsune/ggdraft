@@ -221,7 +221,7 @@ impl UniformValue for Matrix4x4<f32> {
 impl UniformValue for TextureView {
     unsafe fn set_uniform(&self, location: i32) {
         // Get the appropriate texture unit
-        let texture_unit = self.texture_unit().to_index();
+        let texture_unit = self.texture_type().texture_unit_index();
 
         // Bind the texture to the texture unit
         gl::ActiveTexture(gl::TEXTURE0 + texture_unit);

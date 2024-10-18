@@ -73,19 +73,12 @@ pub struct VertexLayout {
 }
 
 impl VertexLayout {
-    /// Create a new vertex layout.
-    pub fn new() -> Self {
+    /// Create a new empty vertex layout.
+    pub(crate) fn new() -> Self {
         Self {
             inputs: Vec::new(),
             component_stride: 0,
         }
-    }
-
-    /// Create a vertex layout from the given inputs.
-    pub fn from_inputs(inputs: Vec<VertexInput>) -> Self {
-        let mut layout = Self::new();
-        layout.push_many(inputs);
-        layout
     }
 
     /// Push a new input to the layout.
@@ -103,15 +96,27 @@ impl VertexLayout {
         self.inputs.extend(inputs);
     }
 
-    /// Push a new input to the layout.
-    pub fn with_input(mut self, input: VertexInput) -> Self {
-        self.push(input);
+    /// Push a new position input to the layout.
+    pub fn with_position(mut self) -> Self {
+        self.push(VertexInput::Position);
         self
     }
 
-    /// Push multiple inputs to the layout.
-    pub fn with_inputs(mut self, inputs: Vec<VertexInput>) -> Self {
-        self.push_many(inputs);
+    /// Push a new normal input to the layout.
+    pub fn with_normal(mut self) -> Self {
+        self.push(VertexInput::Normal);
+        self
+    }
+
+    /// Push a new color input to the layout.
+    pub fn with_color(mut self) -> Self {
+        self.push(VertexInput::Color);
+        self
+    }
+
+    /// Push a new texture coordinate input to the layout.
+    pub fn with_tex_coord(mut self) -> Self {
+        self.push(VertexInput::TexCoord);
         self
     }
 
@@ -150,16 +155,5 @@ impl VertexLayout {
     /// Get the byte stride of this layout (the size of one vertex in bytes).
     pub fn byte_stride(&self) -> usize {
         self.component_stride * std::mem::size_of::<VertexComponent>()
-    }
-}
-
-impl Default for VertexLayout {
-    fn default() -> Self {
-        Self::from_inputs(vec![
-            VertexInput::Position,
-            VertexInput::Normal,
-            VertexInput::Color,
-            VertexInput::TexCoord,
-        ])
     }
 }

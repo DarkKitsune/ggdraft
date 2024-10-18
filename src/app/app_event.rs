@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::gfx::{
     texture::TextureView,
     vertex_layout::{VertexInput, VertexLayout},
@@ -19,44 +17,16 @@ pub fn graphics_init(
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
     // Create vertex layout describing the vertices going into the shader
-    let vertex_layout = Rc::new(
+    graphics_cache.create_vertex_layout("vertex layout", || {
         VertexLayout::new()
-            .with_input(VertexInput::Position)
-            .with_input(VertexInput::Color)
-            .with_input(VertexInput::TexCoord),
-    );
+            .with_position()
+            .with_color()
+            .with_normal()
+            .with_tex_coord()
+    });
 
-    // Create a mesh from a rectangle shape
-    graphics_cache.create_mesh(
-        "mesh",
-        vertex_layout.clone(),
-        &vec![
-            Rectangle::default()
-                .with_center(vector!(0.1, 0.2, 0.0))
-                .with_rotation_z(0.2)
-                .with_size(vector!(1.1, 0.8))
-                .with_color(WHITE.lerp(&RED, 0.5))
-                .with_tex_coords(vector!(0.0, 0.0), vector!(1.0, 1.0)),
-            Rectangle::default()
-                .with_center(vector!(-0.5, -0.2, 0.0))
-                .with_rotation_z(0.5)
-                .with_size(vector!(0.9, 1.3))
-                .with_color(WHITE.lerp(&GREEN, 0.5))
-                .with_tex_coords(vector!(0.0, 0.0), vector!(0.5, 1.0)),
-            Rectangle::default()
-                .with_center(vector!(0.3, -0.4, 0.0))
-                .with_rotation_z(0.8)
-                .with_size(vector!(1.2, 0.7))
-                .with_color(WHITE.lerp(&BLUE, 0.5))
-                .with_tex_coords(vector!(0.5, 0.0), vector!(1.0, 1.0)),
-        ],
-    );
-
-    // Create a texture from a file
-    graphics_cache.create_texture_from_file("texture", TextureUnit::Color, "assets/texture.png")?;
-
-    // Create a vertex array from the vertex layout
-    graphics_cache.create_input_layout_from_vertex_layout("input layout", vertex_layout);
+    // Create an input layout from the vertex layout
+    graphics_cache.create_input_layout_from_vertex_layout("input layout", "vertex layout");
 
     // Create shader program
     graphics_cache.create_program_vertex_fragment(
@@ -117,6 +87,38 @@ pub fn render(
     graphics_cache: &mut GfxCache,
     framebuffer: TargetBuffer,
 ) -> AppEventResult<()> {
+    // Mesh
+    graphics_cache.inline_mesh("mesh", "vertex layout", || {
+        vec![
+            Rectangle::default()
+                .with_center(vector!(0.1, 0.2, 0.0))
+                .with_rotation_z(0.2)
+                .with_size(vector!(1.1, 0.8))
+                .with_color(WHITE.lerp(&RED, 0.5))
+                .with_tex_coords(vector!(0.0, 0.0), vector!(1.0, 1.0)),
+            Rectangle::default()
+                .with_center(vector!(-0.5, -0.2, 0.0))
+                .with_rotation_z(0.5)
+                .with_size(vector!(0.9, 1.3))
+                .with_color(WHITE.lerp(&GREEN, 0.5))
+                .with_tex_coords(vector!(0.0, 0.0), vector!(0.5, 1.0)),
+            Rectangle::default()
+                .with_center(vector!(0.3, -0.4, 0.0))
+                .with_rotation_z(0.8)
+                .with_size(vector!(1.2, 0.7))
+                .with_color(WHITE.lerp(&BLUE, 0.5))
+                .with_tex_coords(vector!(0.5, 0.0), vector!(1.0, 1.0)),
+        ]
+    });
+
+    // Texture
+    graphics_cache.inline_texture_view_from_file(
+        "texture",
+        TextureType::Color,
+        "assets/texture.png",
+    )?;
+
+    // Clear color is a mix of blue, gray, and white
     let clear_color = BLUE // Start with blue
         .lerp(&GRAY, 0.5) // Mix 50% with gray
         .lerp(&WHITE, 0.25); // Mix 25% with white

@@ -12,7 +12,7 @@ pub use crate::{
         input_parameters::InputParameters,
         shader_gen::prelude::*,
         target_buffer::TargetBuffer,
-        texture::{Texture, TextureUnit},
+        texture::{Texture, TextureType},
         Gfx,
     },
 };

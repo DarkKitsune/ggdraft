@@ -5,7 +5,7 @@ use image::GenericImageView;
 /// A GL texture.
 pub struct Texture {
     handle: u32,
-    texture_unit: TextureUnit,
+    texture_type: TextureType,
     dimensions: Vec<Vector2<u32>>,
 }
 
@@ -18,7 +18,7 @@ impl Texture {
     /// This function is unsafe because it should only be used on the main thread.
     pub(crate) unsafe fn __from_image(
         name: impl AsRef<str>,
-        texture_unit: TextureUnit,
+        texture_type: TextureType,
         lods: &[image::DynamicImage],
     ) -> Result<Self> {
         let name = name.as_ref();
@@ -94,7 +94,7 @@ impl Texture {
 
             Ok(Self {
                 handle,
-                texture_unit,
+                texture_type,
                 dimensions,
             })
         }
@@ -111,21 +111,16 @@ impl Texture {
         self.handle
     }
 
-    /// Get this texture's target texture unit.
-    pub fn texture_unit(&self) -> TextureUnit {
-        // Panic if this is the default texture.
-        if self.handle == 0 {
-            panic!("Attempted to get the texture unit of the default texture.");
-        }
-
-        self.texture_unit
+    /// Get this texture's type.
+    pub fn texture_type(&self) -> TextureType {
+        self.texture_type
     }
 
     /// Get a `TextureView` pointing to this texture.
     pub fn view(&self) -> TextureView {
         TextureView {
             texture_handle: self.handle,
-            unit: self.texture_unit,
+            texture_type: self.texture_type,
         }
     }
 }
@@ -141,9 +136,10 @@ impl Drop for Texture {
     }
 }
 
-/// Represents a texture unit.
+/// Represents a type of texture.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TextureUnit {
+pub enum TextureType {
+    Invalid,
     Color,
     Normal,
     Metallic,
@@ -151,15 +147,16 @@ pub enum TextureUnit {
     Emissive,
 }
 
-impl TextureUnit {
-    /// Convert to an index.
-    pub(crate) fn to_index(&self) -> u32 {
+impl TextureType {
+    /// Convert to a texture unit index.
+    pub(crate) fn texture_unit_index(&self) -> u32 {
         match self {
-            TextureUnit::Color => 0,
-            TextureUnit::Normal => 1,
-            TextureUnit::Metallic => 2,
-            TextureUnit::Roughness => 3,
-            TextureUnit::Emissive => 4,
+            TextureType::Invalid => panic!("Invalid texture type"),
+            TextureType::Color => 0,
+            TextureType::Normal => 1,
+            TextureType::Metallic => 2,
+            TextureType::Roughness => 3,
+            TextureType::Emissive => 4,
         }
     }
 }
@@ -167,7 +164,7 @@ impl TextureUnit {
 /// Represents a view of a texture for use in rendering.
 pub struct TextureView {
     texture_handle: u32,
-    unit: TextureUnit,
+    texture_type: TextureType,
 }
 
 impl TextureView {
@@ -176,9 +173,9 @@ impl TextureView {
         self.texture_handle
     }
 
-    /// Get the texture unit.
-    pub fn texture_unit(&self) -> TextureUnit {
-        self.unit
+    /// Get the texture type.
+    pub fn texture_type(&self) -> TextureType {
+        self.texture_type
     }
 }
 
@@ -186,7 +183,7 @@ impl Default for TextureView {
     fn default() -> Self {
         Self {
             texture_handle: 0,
-            unit: TextureUnit::Color,
+            texture_type: TextureType::Invalid,
         }
     }
 }
