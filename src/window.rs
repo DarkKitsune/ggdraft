@@ -50,22 +50,22 @@ pub(crate) fn handle_window_events(
             // Window close event or Escape key press event.
             WindowEvent::Close => {
                 window_events.push_close();
-            },
+            }
 
             // Window resize event.
             WindowEvent::FramebufferSize(width, height) => {
                 window_events.push_resize(vector!(width as u32, height as u32));
-            },
+            }
 
             // Key press event.
             WindowEvent::Key(key, _, Action::Press, _) => {
                 window_events.push_key_press(key);
-            },
+            }
 
             // Key release event.
             WindowEvent::Key(key, _, Action::Release, _) => {
                 window_events.push_key_release(key);
-            },
+            }
 
             // Ignore other events.
             _ => {}
@@ -104,7 +104,12 @@ pub struct WindowEvents {
 impl WindowEvents {
     /// Create a new `WindowEvents`.
     pub(crate) fn new() -> Self {
-        Self { closed: false, resized: None, key_presses: Vec::new(), key_releases: Vec::new() }
+        Self {
+            closed: false,
+            resized: None,
+            key_presses: Vec::new(),
+            key_releases: Vec::new(),
+        }
     }
 
     /// Push a window close event.
@@ -146,7 +151,7 @@ impl WindowEvents {
     pub fn key_released(&self, key: Key) -> bool {
         self.key_releases.contains(&key)
     }
-    
+
     /// Get the key presses that occurred.
     pub fn key_presses(&self) -> &[Key] {
         &self.key_presses

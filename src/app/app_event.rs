@@ -37,10 +37,7 @@ pub fn post_think(_app_data: AppData<Data>) -> AppEventResult<()> {
 }
 
 // Called when initializing the rendering engine
-pub fn init_render(
-    _app_data: AppData<Data>,
-    graphics_cache: &mut GfxCache,
-) -> AppEventResult<()> {
+pub fn init_render(_app_data: AppData<Data>, graphics_cache: &mut GfxCache) -> AppEventResult<()> {
     // Create vertex layout describing the vertices going into the shader
     graphics_cache.create_vertex_layout("vertex layout", |layout| {
         layout

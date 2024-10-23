@@ -63,10 +63,7 @@ pub async fn run() -> Result<()> {
     // Run the app on a loop until the app is closed.
     loop {
         // Update the window.
-        let events = window::handle_window_events(
-            &mut glfw,
-            &events,
-        );
+        let events = window::handle_window_events(&mut glfw, &events);
 
         // Run app window events.
         Gfx::get().use_cache_mut(|cache| {

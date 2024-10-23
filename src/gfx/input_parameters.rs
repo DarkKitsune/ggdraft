@@ -1,6 +1,11 @@
 use ggmath::prelude::*;
 
-use super::{program::UniformValue, shader_gen::shader_parameters::{PARAMETER_MODEL_MATRIX, PARAMETER_PROJECTION_MATRIX, PARAMETER_VIEW_MATRIX}};
+use super::{
+    program::UniformValue,
+    shader_gen::shader_parameters::{
+        PARAMETER_MODEL_MATRIX, PARAMETER_PROJECTION_MATRIX, PARAMETER_VIEW_MATRIX,
+    },
+};
 
 /// Represents a render parameter for the render pipeline.
 pub struct RenderParameter {
@@ -46,7 +51,8 @@ impl RenderParameters {
 
     /// Get the view matrix.
     pub fn get_view_matrix(&self) -> Option<&Matrix4x4<f32>> {
-        self.get(PARAMETER_VIEW_MATRIX).map(|v| v.as_any().downcast_ref().unwrap())
+        self.get(PARAMETER_VIEW_MATRIX)
+            .map(|v| v.as_any().downcast_ref().unwrap())
     }
 
     /// Set the projection matrix.
@@ -69,6 +75,7 @@ impl RenderParameters {
 
     /// Get the model matrix.
     pub fn get_model_matrix(&self) -> Option<&Matrix4x4<f32>> {
-        self.get(PARAMETER_MODEL_MATRIX).map(|v| v.as_any().downcast_ref().unwrap())
+        self.get(PARAMETER_MODEL_MATRIX)
+            .map(|v| v.as_any().downcast_ref().unwrap())
     }
 }
