@@ -1,17 +1,7 @@
-pub struct Data {
-    closed: bool,
-}
+pub struct Data {}
 
 impl Data {
     pub fn new() -> Self {
-        Self { closed: false }
-    }
-
-    pub fn close(&mut self) {
-        self.closed = true;
-    }
-
-    pub fn is_closed(&self) -> bool {
-        self.closed
+        Self {}
     }
 }

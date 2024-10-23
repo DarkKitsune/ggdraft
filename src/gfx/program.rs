@@ -122,7 +122,7 @@ impl Program {
     }
 
     /// Use the given input parameters
-    pub fn use_parameters(&self, input_parameters: &RenderParameters) -> Result<()> {
+    pub(crate) fn use_parameters(&self, input_parameters: &RenderParameters) -> Result<()> {
         let expected_parameters = self.parameters();
         // Loop through the expected parameters
         for parameter in expected_parameters.iter() {

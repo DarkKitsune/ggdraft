@@ -1,3 +1,4 @@
+use glfw::Key;
 use window::WindowEvents;
 
 use crate::gfx::{texture::TextureView, vertex_layout::VertexInput};
@@ -5,31 +6,33 @@ use crate::gfx::{texture::TextureView, vertex_layout::VertexInput};
 use super::app_prelude::*;
 
 // Called when the app is initialized
-pub fn init(_app_data: AppData<Data>) -> AppEventResult<()> {
+pub fn init(_engine: &mut Engine, _app_data: AppData<Data>) -> AppEventResult<()> {
     println!("App has been initialized.");
-    Ok(())
-}
-
-// Called before the engine thinks
-pub fn pre_think(_app_data: AppData<Data>) -> AppEventResult<()> {
-    Ok(())
-}
-
-// Called after the engine thinks
-pub fn post_think(_app_data: AppData<Data>) -> AppEventResult<()> {
     Ok(())
 }
 
 // Called when the window receives events
 pub fn window_events(
+    engine: &mut Engine,
     _app_data: AppData<Data>,
     _graphics_cache: &mut GfxCache,
-    window_events: WindowEvents,
+    window_events: &WindowEvents,
 ) -> AppEventResult<()> {
-    if let Some(size) = window_events.resize() {
-        println!("Window has been resized to ({}, {})", size.x(), size.y());
+    // Stop the engine if the window is closed or the Escape key is pressed
+    if window_events.closed() || window_events.key_pressed(Key::Escape) {
+        engine.stop();
     }
 
+    Ok(())
+}
+
+// Called before the engine thinks
+pub fn pre_think(_engine: &mut Engine, _app_data: AppData<Data>) -> AppEventResult<()> {
+    Ok(())
+}
+
+// Called after the engine thinks
+pub fn post_think(_app_data: AppData<Data>) -> AppEventResult<()> {
     Ok(())
 }
 

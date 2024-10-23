@@ -2,17 +2,19 @@ pub mod app_event;
 pub mod app_prelude;
 pub mod data;
 
-use crate::window;
+use crate::{engine::Engine, window};
 use anyhow::Result;
 use app_prelude::*;
-use app_weaver::prelude::*;
+// use app_weaver::prelude::*;
 use data::Data;
 
+/*
 #[derive(Clone)]
 pub enum WindowMessage {
     Close,
 }
 impl_message!(WindowMessage);
+
 
 modules! {
     Main(Data) {
@@ -39,18 +41,21 @@ modules! {
             Ok(())
         }
     }
-}
+}*/
 
 pub async fn run() -> Result<()> {
     // Create the app and the app data.
     let app_data = AppData::new(Data::new());
-    let app = AppBuilder::new(app_data.clone()).with_module(&Main).build();
+    // let app = AppBuilder::new(app_data.clone()).with_module(&Main).build();
+
+    // Create the engine controller.
+    let mut engine = Engine::new();
 
     // Create the window.
     let (mut glfw, mut window, events) = window::create_window();
 
     // Run init event
-    app_event::init(app_data.clone())?;
+    app_event::init(&mut engine, app_data.clone())?;
 
     // Run graphics init event
     Gfx::get().use_cache_mut(|cache| app_event::init_render(app_data.clone(), cache))?;
@@ -59,25 +64,24 @@ pub async fn run() -> Result<()> {
     loop {
         // Update the window.
         let events = window::handle_window_events(
-            app.get_channel("Main", "window_channel").unwrap(),
             &mut glfw,
             &events,
         );
 
         // Run app window events.
         Gfx::get().use_cache_mut(|cache| {
-            app_event::window_events(app_data.clone(), cache, events)
+            app_event::window_events(&mut engine, app_data.clone(), cache, &events)
         })?;
 
         // Run app pre-think event.
-        app_event::pre_think(app_data.clone())?;
+        app_event::pre_think(&mut engine, app_data.clone())?;
 
         // Let the engine think by running the app modules once.
-        app.run().await?;
+        // app.run().await?;
 
         // End the loop if the window is closed.
         // This is done after thinking so that the app can clean up.
-        if app_data.get().is_closed() {
+        if engine.is_stopping() {
             break;
         }
 
