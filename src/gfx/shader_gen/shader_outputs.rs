@@ -5,7 +5,7 @@ use crate::gfx::shader::ShaderStage;
 use super::{shader_expression::ShaderExpression, shader_type::ShaderType};
 
 /// The prefix for shader output variables.
-pub(crate) const SHADER_OUTPUT_PREFIX: &str = "output_";
+pub(crate) const SHADER_OUTPUT_PREFIX: &str = "_output_";
 
 /// Represents a single output from a shader stage.
 pub struct ShaderOutput {

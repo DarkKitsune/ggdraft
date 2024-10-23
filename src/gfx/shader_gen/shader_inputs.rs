@@ -6,7 +6,7 @@ use super::{
 };
 
 /// The prefix for shader input variables.
-pub(crate) const SHADER_INPUT_PREFIX: &str = "input_";
+pub(crate) const SHADER_INPUT_PREFIX: &str = "_input_";
 
 /// Represents a single input to a shader stage.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

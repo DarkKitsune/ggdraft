@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::{any::Any, ffi::CString};
 
 use anyhow::Result;
 use ggmath::prelude::*;
@@ -158,14 +158,16 @@ impl Drop for Program {
 }
 
 /// Represents a value that can be set as a uniform
-pub trait UniformValue {
-    /// Set the uniform
+pub trait UniformValue: Any {
+    /// Copy this value to the uniform at the given location.
     /// # Safety
     /// This function is unsafe because it must be called on the main thread.
     /// It is also unsafe because it uses raw OpenGL functions.
     unsafe fn set_uniform(&self, location: i32);
     /// Get the `ShaderType` of the uniform
     fn value_type(&self) -> ShaderType;
+    /// Get the value as an `Any` trait object
+    fn as_any(&self) -> &dyn Any;
 }
 
 impl UniformValue for f32 {
@@ -175,6 +177,10 @@ impl UniformValue for f32 {
 
     fn value_type(&self) -> ShaderType {
         ShaderType::F32
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
@@ -186,6 +192,10 @@ impl UniformValue for Vector2<f32> {
     fn value_type(&self) -> ShaderType {
         ShaderType::Vec2
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl UniformValue for Vector3<f32> {
@@ -195,6 +205,10 @@ impl UniformValue for Vector3<f32> {
 
     fn value_type(&self) -> ShaderType {
         ShaderType::Vec3
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
@@ -206,6 +220,10 @@ impl UniformValue for Vector4<f32> {
     fn value_type(&self) -> ShaderType {
         ShaderType::Vec4
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl UniformValue for Matrix4x4<f32> {
@@ -215,6 +233,10 @@ impl UniformValue for Matrix4x4<f32> {
 
     fn value_type(&self) -> ShaderType {
         ShaderType::Mat4
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 
@@ -233,6 +255,10 @@ impl UniformValue for TextureView {
 
     fn value_type(&self) -> ShaderType {
         ShaderType::Sampler2D
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 

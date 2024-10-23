@@ -8,8 +8,17 @@ use super::{
     shader_type::ShaderType,
 };
 
-/// The prefix for shader uniform variables.
-pub(crate) const SHADER_UNIFORM_PREFIX: &str = "uniform_";
+/// The prefix for shader uniform variables in generated shaders.
+pub(crate) const SHADER_UNIFORM_PREFIX: &str = "_uniform_";
+
+/// The built-in view matrix parameter name in generated shaders.
+pub(crate) const PARAMETER_VIEW_MATRIX: &str = "_parameter_view_matrix";
+
+/// The built-in projection matrix parameter name in generated shaders.
+pub(crate) const PARAMETER_PROJECTION_MATRIX: &str = "_parameter_projection_matrix";
+
+/// The built-in model matrix parameter name in generated shaders.
+pub(crate) const PARAMETER_MODEL_MATRIX: &str = "_parameter_model_matrix";
 
 /// Represents a single parameter for a shader.
 #[derive(Debug, Clone, PartialEq)]
@@ -123,6 +132,21 @@ impl ShaderParameters {
     /// Get the given Matrix4x4<f32> parameter by name.
     pub fn get_mat3(&mut self, name: impl Into<String>) -> ShaderExpression {
         self.get::<Matrix4x4<f32>>(name)
+    }
+
+    /// Get the view matrix.
+    pub fn view_matrix(&mut self) -> ShaderExpression {
+        self.get::<Matrix4x4<f32>>(PARAMETER_VIEW_MATRIX)
+    }
+
+    /// Get the projection matrix.
+    pub fn projection_matrix(&mut self) -> ShaderExpression {
+        self.get::<Matrix4x4<f32>>(PARAMETER_PROJECTION_MATRIX)
+    }
+
+    /// Get the model matrix.
+    pub fn model_matrix(&mut self) -> ShaderExpression {
+        self.get::<Matrix4x4<f32>>(PARAMETER_MODEL_MATRIX)
     }
 
     /// Get an iterator over the parameters.

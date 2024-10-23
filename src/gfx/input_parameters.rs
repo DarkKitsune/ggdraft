@@ -1,4 +1,6 @@
-use super::program::UniformValue;
+use ggmath::prelude::*;
+
+use super::{program::UniformValue, shader_gen::shader_parameters::{PARAMETER_MODEL_MATRIX, PARAMETER_PROJECTION_MATRIX, PARAMETER_VIEW_MATRIX}};
 
 /// Represents a render parameter for the render pipeline.
 pub struct RenderParameter {
@@ -34,5 +36,39 @@ impl RenderParameters {
             .iter()
             .find(|p| p.name == name)
             .map(|p| p.value.as_ref())
+    }
+
+    /// Set the view matrix.
+    /// The actual name of the parameter is `ShaderParameter::PARAMETER_VIEW_MATRIX`.
+    pub fn set_view_matrix(&mut self, matrix: Matrix4x4<f32>) {
+        self.set(PARAMETER_VIEW_MATRIX, matrix);
+    }
+
+    /// Get the view matrix.
+    pub fn get_view_matrix(&self) -> Option<&Matrix4x4<f32>> {
+        self.get(PARAMETER_VIEW_MATRIX).map(|v| v.as_any().downcast_ref().unwrap())
+    }
+
+    /// Set the projection matrix.
+    /// The actual name of the parameter is `ShaderParameter::PARAMETER_PROJECTION_MATRIX`.
+    pub fn set_projection_matrix(&mut self, matrix: Matrix4x4<f32>) {
+        self.set(PARAMETER_PROJECTION_MATRIX, matrix);
+    }
+
+    /// Get the projection matrix.
+    pub fn get_projection_matrix(&self) -> Option<&Matrix4x4<f32>> {
+        self.get(PARAMETER_PROJECTION_MATRIX)
+            .map(|v| v.as_any().downcast_ref().unwrap())
+    }
+
+    /// Set the model matrix.
+    /// The actual name of the parameter is `ShaderParameter::PARAMETER_MODEL_MATRIX`.
+    pub fn set_model_matrix(&mut self, matrix: Matrix4x4<f32>) {
+        self.set(PARAMETER_MODEL_MATRIX, matrix);
+    }
+
+    /// Get the model matrix.
+    pub fn get_model_matrix(&self) -> Option<&Matrix4x4<f32>> {
+        self.get(PARAMETER_MODEL_MATRIX).map(|v| v.as_any().downcast_ref().unwrap())
     }
 }
