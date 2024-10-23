@@ -1,7 +1,11 @@
 use super::app_prelude::*;
 
 // Called when the app is initialized
-pub fn init(_engine: &mut Engine, _universe: &mut Universe, _async_data: AppData<AsyncData>) -> AppEventResult<()> {
+pub fn init(
+    _engine: &mut Engine,
+    _universe: &mut Universe,
+    _async_data: AppData<AsyncData>,
+) -> AppEventResult<()> {
     println!("App has been initialized.");
     Ok(())
 }
@@ -23,12 +27,20 @@ pub fn window_events(
 }
 
 // Called before the engine thinks
-pub fn pre_think(_engine: &mut Engine, _universe: &mut Universe, _async_data: AppData<AsyncData>) -> AppEventResult<()> {
+pub fn pre_think(
+    _engine: &mut Engine,
+    _universe: &mut Universe,
+    _async_data: AppData<AsyncData>,
+) -> AppEventResult<()> {
     Ok(())
 }
 
 // Called after the engine thinks
-pub fn post_think(_engine: &mut Engine, _universe: &mut Universe, _async_data: AppData<AsyncData>) -> AppEventResult<()> {
+pub fn post_think(
+    _engine: &mut Engine,
+    _universe: &mut Universe,
+    _async_data: AppData<AsyncData>,
+) -> AppEventResult<()> {
     Ok(())
 }
 

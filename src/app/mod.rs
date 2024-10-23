@@ -62,8 +62,9 @@ pub async fn run() -> Result<()> {
     app_event::init(&mut engine, &mut universe, async_data.clone())?;
 
     // Run init render event
-    Gfx::get()
-        .use_cache_mut(|cache| app_event::init_render(&mut engine, &mut universe, async_data.clone(), cache))?;
+    Gfx::get().use_cache_mut(|cache| {
+        app_event::init_render(&mut engine, &mut universe, async_data.clone(), cache)
+    })?;
 
     // Run the app on a loop until the app is closed.
     loop {
@@ -75,7 +76,13 @@ pub async fn run() -> Result<()> {
 
         // Pass the window events to the app.
         Gfx::get().use_cache_mut(|cache| {
-            app_event::window_events(&mut engine, &mut universe, async_data.clone(), cache, &events)
+            app_event::window_events(
+                &mut engine,
+                &mut universe,
+                async_data.clone(),
+                cache,
+                &events,
+            )
         })?;
 
         // Run app pre-think event.
@@ -96,7 +103,8 @@ pub async fn run() -> Result<()> {
         // Run app render event.
         Gfx::get().use_cache_mut(|cache| {
             app_event::render(
-                &mut engine, &mut universe,
+                &mut engine,
+                &mut universe,
                 async_data.clone(),
                 cache,
                 Gfx::get().default_framebuffer(),
