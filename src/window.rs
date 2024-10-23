@@ -35,8 +35,8 @@ pub(crate) fn create_window() -> (Glfw, PWindow, GlfwReceiver<(f64, WindowEvent)
     (glfw, window, events)
 }
 
-/// Handle window events.
-pub(crate) fn handle_window_events(
+/// Retrieve window events that occurred.
+pub(crate) fn get_window_events(
     glfw: &mut Glfw,
     events: &GlfwReceiver<(f64, WindowEvent)>,
 ) -> WindowEvents {

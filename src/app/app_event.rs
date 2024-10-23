@@ -1,12 +1,7 @@
-use glfw::Key;
-use window::WindowEvents;
-
-use crate::gfx::{texture::TextureView, vertex_layout::VertexInput};
-
 use super::app_prelude::*;
 
 // Called when the app is initialized
-pub fn init(_engine: &mut Engine, _app_data: AppData<Data>) -> AppEventResult<()> {
+pub fn init(_engine: &mut Engine, _universe: &mut Universe, _async_data: AppData<AsyncData>) -> AppEventResult<()> {
     println!("App has been initialized.");
     Ok(())
 }
@@ -14,7 +9,8 @@ pub fn init(_engine: &mut Engine, _app_data: AppData<Data>) -> AppEventResult<()
 // Called when the window receives events
 pub fn window_events(
     engine: &mut Engine,
-    _app_data: AppData<Data>,
+    _universe: &mut Universe,
+    _async_data: AppData<AsyncData>,
     _graphics_cache: &mut GfxCache,
     window_events: &WindowEvents,
 ) -> AppEventResult<()> {
@@ -27,19 +23,20 @@ pub fn window_events(
 }
 
 // Called before the engine thinks
-pub fn pre_think(_engine: &mut Engine, _app_data: AppData<Data>) -> AppEventResult<()> {
+pub fn pre_think(_engine: &mut Engine, _universe: &mut Universe, _async_data: AppData<AsyncData>) -> AppEventResult<()> {
     Ok(())
 }
 
 // Called after the engine thinks
-pub fn post_think(_engine: &mut Engine, _app_data: AppData<Data>) -> AppEventResult<()> {
+pub fn post_think(_engine: &mut Engine, _universe: &mut Universe, _async_data: AppData<AsyncData>) -> AppEventResult<()> {
     Ok(())
 }
 
 // Called when initializing the rendering engine
 pub fn init_render(
     _engine: &mut Engine,
-    _app_data: AppData<Data>,
+    _universe: &mut Universe,
+    _async_data: AppData<AsyncData>,
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
     // Create vertex layout describing the vertices going into the shader
@@ -129,7 +126,8 @@ pub fn init_render(
 // Called when the engine renders a frame
 pub fn render(
     _engine: &mut Engine,
-    _app_data: AppData<Data>,
+    _universe: &mut Universe,
+    _async_data: AppData<AsyncData>,
     graphics_cache: &mut GfxCache,
     framebuffer: TargetBuffer,
 ) -> AppEventResult<()> {

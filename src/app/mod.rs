@@ -1,12 +1,12 @@
 pub mod app_event;
 pub mod app_prelude;
-pub mod data;
+pub mod async_data;
 
 use crate::{engine::Engine, window};
 use anyhow::Result;
 use app_prelude::*;
 // use app_weaver::prelude::*;
-use data::Data;
+use async_data::AsyncData;
 
 /*
 #[derive(Clone)]
@@ -44,8 +44,9 @@ modules! {
 }*/
 
 pub async fn run() -> Result<()> {
-    // Create the app and the app data.
-    let app_data = AppData::new(Data::new());
+    // Create the data which will be shared asynchronously between app modules.
+    let async_data = AppData::new(AsyncData::new());
+    // Create the app.
     // let app = AppBuilder::new(app_data.clone()).with_module(&Main).build();
 
     // Create the engine controller.
@@ -54,28 +55,31 @@ pub async fn run() -> Result<()> {
     // Create the window.
     let (mut glfw, mut window, events) = window::create_window();
 
-    // Run init event
-    app_event::init(&mut engine, app_data.clone())?;
+    // Create the main universe.
+    let mut universe = Universe::new();
 
-    // Run graphics init event
+    // Run init event
+    app_event::init(&mut engine, &mut universe, async_data.clone())?;
+
+    // Run init render event
     Gfx::get()
-        .use_cache_mut(|cache| app_event::init_render(&mut engine, app_data.clone(), cache))?;
+        .use_cache_mut(|cache| app_event::init_render(&mut engine, &mut universe, async_data.clone(), cache))?;
 
     // Run the app on a loop until the app is closed.
     loop {
-        // Start a new engine iteration.
+        // Start an engine iteration.
         engine.start_iteration();
 
-        // Update the window.
-        let events = window::handle_window_events(&mut glfw, &events);
+        // Check for window events.
+        let events = window::get_window_events(&mut glfw, &events);
 
-        // Run app window events.
+        // Pass the window events to the app.
         Gfx::get().use_cache_mut(|cache| {
-            app_event::window_events(&mut engine, app_data.clone(), cache, &events)
+            app_event::window_events(&mut engine, &mut universe, async_data.clone(), cache, &events)
         })?;
 
         // Run app pre-think event.
-        app_event::pre_think(&mut engine, app_data.clone())?;
+        app_event::pre_think(&mut engine, &mut universe, async_data.clone())?;
 
         // Let the engine think by running the app modules once.
         // app.run().await?;
@@ -87,13 +91,13 @@ pub async fn run() -> Result<()> {
         }
 
         // Run app post-think event.
-        app_event::post_think(&mut engine, app_data.clone())?;
+        app_event::post_think(&mut engine, &mut universe, async_data.clone())?;
 
         // Run app render event.
         Gfx::get().use_cache_mut(|cache| {
             app_event::render(
-                &mut engine,
-                app_data.clone(),
+                &mut engine, &mut universe,
+                async_data.clone(),
                 cache,
                 Gfx::get().default_framebuffer(),
             )
