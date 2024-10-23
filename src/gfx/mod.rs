@@ -29,6 +29,7 @@ thread_local! {
 }
 
 /// The debug message callback for OpenGL.
+#[cfg(debug_assertions)]
 extern "system" fn debug_message_callback(
     source: GLenum,
     error_type: GLenum,
@@ -114,7 +115,8 @@ impl Gfx {
             // Load the OpenGL function pointers.
             gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
-            // Enable debug output.
+            // Enable debug output if debug assertions are enabled.
+            #[cfg(debug_assertions)]
             unsafe {
                 gl::Enable(gl::DEBUG_OUTPUT);
                 gl::Enable(gl::DEBUG_OUTPUT_SYNCHRONOUS);
