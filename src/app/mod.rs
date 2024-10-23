@@ -53,32 +53,38 @@ pub async fn run() -> Result<()> {
     app_event::init(app_data.clone())?;
 
     // Run graphics init event
-    Gfx::get().use_cache_mut(|cache| app_event::graphics_init(app_data.clone(), cache))?;
+    Gfx::get().use_cache_mut(|cache| app_event::init_render(app_data.clone(), cache))?;
 
     // Run the app on a loop until the app is closed.
     loop {
         // Update the window.
-        window::handle_window_events(
+        let events = window::handle_window_events(
             app.get_channel("Main", "window_channel").unwrap(),
             &mut glfw,
             &events,
         );
 
-        // Run pre-think event
+        // Run app window events.
+        Gfx::get().use_cache_mut(|cache| {
+            app_event::window_events(app_data.clone(), cache, events)
+        })?;
+
+        // Run app pre-think event.
         app_event::pre_think(app_data.clone())?;
 
-        // Run the app modules (think)
+        // Let the engine think by running the app modules once.
         app.run().await?;
 
         // End the loop if the window is closed.
+        // This is done after thinking so that the app can clean up.
         if app_data.get().is_closed() {
             break;
         }
 
-        // Run post-think event
+        // Run app post-think event.
         app_event::post_think(app_data.clone())?;
 
-        // Run render event
+        // Run app render event.
         Gfx::get().use_cache_mut(|cache| {
             app_event::render(app_data.clone(), cache, Gfx::get().default_framebuffer())
         })?;

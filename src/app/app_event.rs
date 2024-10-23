@@ -1,3 +1,5 @@
+use window::WindowEvents;
+
 use crate::gfx::{texture::TextureView, vertex_layout::VertexInput};
 
 use super::app_prelude::*;
@@ -8,8 +10,31 @@ pub fn init(_app_data: AppData<Data>) -> AppEventResult<()> {
     Ok(())
 }
 
+// Called before the engine thinks
+pub fn pre_think(_app_data: AppData<Data>) -> AppEventResult<()> {
+    Ok(())
+}
+
+// Called after the engine thinks
+pub fn post_think(_app_data: AppData<Data>) -> AppEventResult<()> {
+    Ok(())
+}
+
+// Called when the window receives events
+pub fn window_events(
+    _app_data: AppData<Data>,
+    _graphics_cache: &mut GfxCache,
+    window_events: WindowEvents,
+) -> AppEventResult<()> {
+    if let Some(size) = window_events.resize() {
+        println!("Window has been resized to ({}, {})", size.x(), size.y());
+    }
+
+    Ok(())
+}
+
 // Called when initializing the rendering engine
-pub fn graphics_init(
+pub fn init_render(
     _app_data: AppData<Data>,
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
@@ -94,16 +119,6 @@ pub fn graphics_init(
     // Create the texture
     graphics_cache.create_texture_from_file("texture", TextureType::Color, "assets/texture.png")?;
 
-    Ok(())
-}
-
-// Called before the engine thinks
-pub fn pre_think(_app_data: AppData<Data>) -> AppEventResult<()> {
-    Ok(())
-}
-
-// Called after the engine thinks
-pub fn post_think(_app_data: AppData<Data>) -> AppEventResult<()> {
     Ok(())
 }
 

@@ -1,4 +1,5 @@
 use app_weaver::prelude::*;
+use ggmath::prelude::*;
 use glfw::{Context, Glfw, GlfwReceiver, PWindow};
 
 use crate::{app::WindowMessage, gfx::Gfx};
@@ -39,27 +40,30 @@ pub(crate) fn handle_window_events(
     window_channel: &Channel,
     glfw: &mut Glfw,
     events: &GlfwReceiver<(f64, glfw::WindowEvent)>,
-) {
+) -> WindowEvents {
     // Poll for events in the window.
     glfw.poll_events();
 
     // Handle events in the window.
+    let mut window_events = WindowEvents::new();
     for (_, event) in glfw::flush_messages(events) {
         match event {
-            // Resize the viewport when the window is resized.
-            glfw::WindowEvent::FramebufferSize(width, height) => unsafe {
-                gl::Viewport(0, 0, width, height);
+            // Window resize event.
+            glfw::WindowEvent::FramebufferSize(width, height) => {
+                window_events.resize = Some(vector!(width as u32, height as u32));
             },
 
-            // Close the window when the escape key is pressed.
-            glfw::WindowEvent::Key(glfw::Key::Escape, _, glfw::Action::Press, _) => {
+            // Window close event or Escape key press event.
+            glfw::WindowEvent::Close | glfw::WindowEvent::Key(glfw::Key::Escape, _, glfw::Action::Press, _) => {
                 window_channel.send(WindowMessage::Close);
-            }
+            },
 
             // Ignore other events.
             _ => {}
         }
     }
+
+    window_events
 }
 
 /// Swap the window frame buffers.
@@ -75,5 +79,23 @@ pub(crate) fn swap_window_buffers(window: &mut PWindow) {
         gl::ClearColor(0.392, 0.584, 0.929, 1.0);
         // Clear the color buffer.
         gl::Clear(gl::COLOR_BUFFER_BIT);
+    }
+}
+
+/// Window events that were caught by handle_window_events.
+#[derive(Debug)]
+pub struct WindowEvents {
+    resize: Option<Vector2<u32>>,
+}
+
+impl WindowEvents {
+    /// Create a new window events.
+    pub(crate) fn new() -> Self {
+        Self { resize: None }
+    }
+
+    /// Get the window resize event if one occurred.
+    pub fn resize(&self) -> Option<Vector2<u32>> {
+        self.resize
     }
 }
