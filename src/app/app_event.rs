@@ -32,12 +32,16 @@ pub fn pre_think(_engine: &mut Engine, _app_data: AppData<Data>) -> AppEventResu
 }
 
 // Called after the engine thinks
-pub fn post_think(_app_data: AppData<Data>) -> AppEventResult<()> {
+pub fn post_think(_engine: &mut Engine, _app_data: AppData<Data>) -> AppEventResult<()> {
     Ok(())
 }
 
 // Called when initializing the rendering engine
-pub fn init_render(_app_data: AppData<Data>, graphics_cache: &mut GfxCache) -> AppEventResult<()> {
+pub fn init_render(
+    _engine: &mut Engine,
+    _app_data: AppData<Data>,
+    graphics_cache: &mut GfxCache,
+) -> AppEventResult<()> {
     // Create vertex layout describing the vertices going into the shader
     graphics_cache.create_vertex_layout("vertex layout", |layout| {
         layout
@@ -124,6 +128,7 @@ pub fn init_render(_app_data: AppData<Data>, graphics_cache: &mut GfxCache) -> A
 
 // Called when the engine renders a frame
 pub fn render(
+    _engine: &mut Engine,
     _app_data: AppData<Data>,
     graphics_cache: &mut GfxCache,
     framebuffer: TargetBuffer,

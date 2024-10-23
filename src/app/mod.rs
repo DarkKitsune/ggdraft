@@ -58,10 +58,14 @@ pub async fn run() -> Result<()> {
     app_event::init(&mut engine, app_data.clone())?;
 
     // Run graphics init event
-    Gfx::get().use_cache_mut(|cache| app_event::init_render(app_data.clone(), cache))?;
+    Gfx::get()
+        .use_cache_mut(|cache| app_event::init_render(&mut engine, app_data.clone(), cache))?;
 
     // Run the app on a loop until the app is closed.
     loop {
+        // Start a new engine iteration.
+        engine.start_iteration();
+
         // Update the window.
         let events = window::handle_window_events(&mut glfw, &events);
 
@@ -83,11 +87,16 @@ pub async fn run() -> Result<()> {
         }
 
         // Run app post-think event.
-        app_event::post_think(app_data.clone())?;
+        app_event::post_think(&mut engine, app_data.clone())?;
 
         // Run app render event.
         Gfx::get().use_cache_mut(|cache| {
-            app_event::render(app_data.clone(), cache, Gfx::get().default_framebuffer())
+            app_event::render(
+                &mut engine,
+                app_data.clone(),
+                cache,
+                Gfx::get().default_framebuffer(),
+            )
         })?;
 
         // Swap the window frame buffers.
