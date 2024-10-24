@@ -25,9 +25,15 @@ use super::{
 /// A handle pointing to an object in the `GfxCache`.
 pub type CacheHandle = Handle;
 
+/// Holds a single object in the `GfxCache`.
+struct CachedObject {
+    name: Option<String>,
+    object: Box<dyn Any>,
+}
+
 /// A cache for storing graphics objects between renders.
 pub struct GfxCache {
-    objects: HashMap<TypeId, HandleMap<Box<dyn Any>>>,
+    objects: HashMap<TypeId, HandleMap<CachedObject>>,
     names: HashMap<String, CacheHandle>,
 }
 
@@ -43,15 +49,27 @@ impl GfxCache {
     }
 
     /// Insert a new object into the cache.
-    pub fn insert<T: Any>(&mut self, value: T) -> CacheHandle {
+    pub fn insert<T: Any>(&mut self, name: Option<impl Into<String>>, value: T) -> CacheHandle {
+        let name = name.map(|name| name.into());
+
         // Get the type id of the value.
         let type_id = TypeId::of::<T>();
 
-        // Get the hashmap for the type id.
-        let map = self.objects.entry(type_id).or_insert_with(HandleMap::new);
+        // Get the objects hashmap for the type id.
+        let objects = self.objects.entry(type_id).or_insert_with(HandleMap::new);
 
         // Insert the value into the hashmap.
-        map.insert(Box::new(value))
+        let handle = objects.insert(CachedObject {
+            name: name.clone(),
+            object: Box::new(value),
+        });
+
+        // Insert the name into the names hashmap.
+        if let Some(name) = name {
+            self.names.insert(name.into(), handle.clone());
+        }
+
+        handle
     }
 
     /// Get an object from the cache.
@@ -64,25 +82,7 @@ impl GfxCache {
 
         // Get the value from the hashmap
         map.get(&name_or_handle.handle(self))
-            .and_then(|v| v.downcast_ref())
-    }
-
-    /// Set the initial name of an object in the cache.
-    /// This does not remove any old name for the handle from the cache.
-    fn init_name(&mut self, handle: CacheHandle, new_name: impl Into<String>) {
-        self.names.insert(new_name.into(), handle);
-    }
-
-    /// Change the name of an object in the cache.
-    /// This allows the object to be retrieved by name.
-    pub fn rename(&mut self, handle_or_old_name: impl CacheRef, new_name: impl Into<String>) {
-        let handle = handle_or_old_name.handle(self);
-
-        // Remove the old name from the hashmap.
-        self.names.retain(|_, h| *h != handle);
-
-        // Set the new name of the object.
-        self.init_name(handle, new_name);
+            .and_then(|v| v.object.downcast_ref())
     }
 
     /// Get an object's handle by name.
@@ -98,21 +98,25 @@ impl GfxCache {
     /// Remove an object from the cache.
     /// Returns the removed object if it exists.
     pub fn remove<T: Any>(&mut self, name_or_handle: impl CacheRef) -> Option<T> {
-        // Get the type id of the value.
+        // Get the type id of the object.
         let type_id = TypeId::of::<T>();
 
-        // Get the handle of the value.
+        // Get the handle of the object.
         let handle = name_or_handle.handle(self);
 
-        // Get the hashmap for the type id.
-        let map = self.objects.get_mut(&type_id)?;
+        // Get the objects hashmap for the type id.
+        let objects = self.objects.get_mut(&type_id)?;
 
-        // Remove the name from the hashmap.
-        self.names.retain(|_, h| *h != handle);
+        // Remove the object from the objects hashmap.
+        let object = objects.remove(&handle);
 
-        // Remove the value from the hashmap.
-        map.remove(&handle)
-            .and_then(|v| v.downcast().ok().map(|v| *v))
+        // Remove the name from the names hashmap.
+        if let Some(name) = object.as_ref().and_then(|o| o.name.as_deref()) {
+            self.names.remove(name);
+        }
+
+        // Downcast the object and return it.
+        object.map(|o| *o.object.downcast().unwrap())
     }
 
     /// Create a new vertex layout in the cache.
@@ -130,12 +134,7 @@ impl GfxCache {
         vertex_layout.validate().unwrap();
 
         // Insert the vertex layout into the cache.
-        let handle = self.insert(vertex_layout);
-
-        // Set the name of the vertex layout.
-        if let Some(name) = name {
-            self.init_name(handle.clone(), name);
-        }
+        let handle = self.insert(name, vertex_layout);
 
         handle
     }
@@ -155,12 +154,7 @@ impl GfxCache {
         let buffer = unsafe { Buffer::__from_slice(data, None) };
 
         // Insert the buffer into the cache.
-        let handle = self.insert(buffer);
-
-        // Set the name of the buffer.
-        if let Some(name) = name {
-            self.init_name(handle.clone(), name);
-        }
+        let handle = self.insert(name, buffer);
 
         handle
     }
@@ -197,10 +191,7 @@ impl GfxCache {
         let texture = unsafe { Texture::__from_image(&name, texture_type, &[image])? };
 
         // Insert the texture into the cache.
-        let handle = self.insert(texture);
-
-        // Set the name of the texture.
-        self.init_name(handle.clone(), name);
+        let handle = self.insert(Some(name), texture);
 
         Ok(handle)
     }
@@ -232,12 +223,7 @@ impl GfxCache {
         let index_buffer = unsafe { Buffer::__from_slice(vertex_list.indices(), None) };
 
         // Create the mesh into the cache.
-        let handle = self.insert(Mesh::new(vertex_buffer, index_buffer));
-
-        // Set the name of the mesh.
-        if let Some(name) = name {
-            self.init_name(handle.clone(), name);
-        }
+        let handle = self.insert(name, Mesh::new(vertex_buffer, index_buffer));
 
         handle
     }
@@ -273,12 +259,7 @@ impl GfxCache {
         let program = unsafe { Program::__new(&[vertex_shader, fragment_shader])? };
 
         // Insert the program into the cache
-        let handle = self.insert(program);
-
-        // Set the name of the program
-        if let Some(name) = name {
-            self.init_name(handle.clone(), name);
-        }
+        let handle = self.insert(name, program);
 
         Ok(handle)
     }
@@ -301,12 +282,7 @@ impl GfxCache {
         let input_layout = unsafe { InputLayout::__from_vertex_layout(vertex_layout.clone()) };
 
         // Insert the input layout into the cache
-        let handle = self.insert(input_layout);
-
-        // Set the name of the input layout
-        if let Some(name) = name {
-            self.init_name(handle.clone(), name);
-        }
+        let handle = self.insert(name, input_layout);
 
         handle
     }
