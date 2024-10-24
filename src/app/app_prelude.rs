@@ -2,12 +2,14 @@ pub use anyhow::{bail, Result};
 pub use app_weaver::app::AppData;
 pub use ggmath::prelude::*;
 pub use glfw::Key;
-pub use multiverse_ecs::{self, define_class as define_node_class, universe::Universe};
+pub use multiverse_ecs::prelude::*;
 pub use std::rc::Rc;
 
 pub use crate::{
     app::*,
+    class,
     color::*,
+    universe_ref::*,
     geometry::shape::*,
     gfx::{
         gfx_cache::GfxCache,
