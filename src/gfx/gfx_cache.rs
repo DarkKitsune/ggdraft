@@ -67,11 +67,22 @@ impl GfxCache {
             .and_then(|v| v.downcast_ref())
     }
 
-    /// Set the name of an object in the cache.
+    /// Set the initial name of an object in the cache.
+    /// This does not remove any old name for the handle from the cache.
+    fn init_name(&mut self, handle: CacheHandle, new_name: impl Into<String>) {
+        self.names.insert(new_name.into(), handle);
+    }
+
+    /// Change the name of an object in the cache.
     /// This allows the object to be retrieved by name.
-    pub fn set_name(&mut self, handle_or_old_name: impl CacheRef, new_name: impl Into<String>) {
-        self.names
-            .insert(new_name.into(), handle_or_old_name.handle(self));
+    pub fn rename(&mut self, handle_or_old_name: impl CacheRef, new_name: impl Into<String>) {
+        let handle = handle_or_old_name.handle(self);
+
+        // Remove the old name from the hashmap.
+        self.names.retain(|_, h| *h != handle);
+
+        // Set the new name of the object.
+        self.init_name(handle, new_name);
     }
 
     /// Get an object's handle by name.
@@ -123,7 +134,7 @@ impl GfxCache {
 
         // Set the name of the vertex layout.
         if let Some(name) = name {
-            self.set_name(handle.clone(), name);
+            self.init_name(handle.clone(), name);
         }
 
         handle
@@ -148,7 +159,7 @@ impl GfxCache {
 
         // Set the name of the buffer.
         if let Some(name) = name {
-            self.set_name(handle.clone(), name);
+            self.init_name(handle.clone(), name);
         }
 
         handle
@@ -189,7 +200,7 @@ impl GfxCache {
         let handle = self.insert(texture);
 
         // Set the name of the texture.
-        self.set_name(handle.clone(), name);
+        self.init_name(handle.clone(), name);
 
         Ok(handle)
     }
@@ -225,7 +236,7 @@ impl GfxCache {
 
         // Set the name of the mesh.
         if let Some(name) = name {
-            self.set_name(handle.clone(), name);
+            self.init_name(handle.clone(), name);
         }
 
         handle
@@ -266,7 +277,7 @@ impl GfxCache {
 
         // Set the name of the program
         if let Some(name) = name {
-            self.set_name(handle.clone(), name);
+            self.init_name(handle.clone(), name);
         }
 
         Ok(handle)
@@ -294,7 +305,7 @@ impl GfxCache {
 
         // Set the name of the input layout
         if let Some(name) = name {
-            self.set_name(handle.clone(), name);
+            self.init_name(handle.clone(), name);
         }
 
         handle
