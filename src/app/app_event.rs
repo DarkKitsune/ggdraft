@@ -52,7 +52,7 @@ pub fn init_render(
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
     // Create vertex layout describing the vertices going into the shader
-    graphics_cache.create_vertex_layout("vertex layout", |layout| {
+    graphics_cache.create_vertex_layout(Some("vertex layout"), |layout| {
         layout
             .with_position()
             .with_color()
@@ -61,12 +61,12 @@ pub fn init_render(
     });
 
     // Create an input layout from the vertex layout
-    graphics_cache.create_input_layout_from_vertex_layout("input layout", "vertex layout");
+    graphics_cache.create_input_layout_from_vertex_layout(Some("input layout"), "vertex layout");
 
     // Create shader program
     graphics_cache.create_program_vertex_fragment(
         // Name of the program
-        "program",
+        Some("program"),
         // Name of the input layout to use
         "input layout",
         // Vertex shader
@@ -105,7 +105,7 @@ pub fn init_render(
 
     // Create the mesh
     graphics_cache.create_mesh(
-        "mesh",
+        Some("mesh"),
         "vertex layout",
         vec![
             Rectangle::default()
@@ -130,7 +130,7 @@ pub fn init_render(
     );
 
     // Create the texture
-    graphics_cache.create_texture_from_file("texture", TextureType::Color, "assets/texture.png")?;
+    graphics_cache.create_texture_from_file(Some("texture"), TextureType::Color, "assets/texture.png")?;
 
     Ok(())
 }
