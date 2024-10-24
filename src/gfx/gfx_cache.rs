@@ -63,17 +63,19 @@ impl GfxCache {
         let map = self.objects.get(&type_id)?;
 
         // Get the value from the hashmap
-        map.get(&name_or_handle.handle(self)).and_then(|v| v.downcast_ref())
+        map.get(&name_or_handle.handle(self))
+            .and_then(|v| v.downcast_ref())
     }
 
     /// Set the name of an object in the cache.
     /// This allows the object to be retrieved by name.
     pub fn set_name(&mut self, handle_or_old_name: impl CacheRef, new_name: impl Into<String>) {
-        self.names.insert(new_name.into(), handle_or_old_name.handle(self));
+        self.names
+            .insert(new_name.into(), handle_or_old_name.handle(self));
     }
 
     /// Get an object's handle by name.
-    pub fn get_handle_by_name(&self, name: impl AsRef<str>) -> Option<&CacheHandle> {
+    pub fn get_handle_of(&self, name: impl AsRef<str>) -> Option<&CacheHandle> {
         self.names.get(name.as_ref())
     }
 
@@ -98,9 +100,10 @@ impl GfxCache {
         self.names.retain(|_, h| *h != handle);
 
         // Remove the value from the hashmap.
-        map.remove(&handle).and_then(|v| v.downcast().ok().map(|v| *v))
+        map.remove(&handle)
+            .and_then(|v| v.downcast().ok().map(|v| *v))
     }
-    
+
     /// Create a new vertex layout in the cache.
     /// The vertex layout is created using the given function.
     /// The actual type in the cache is `Rc<VertexLayout>`.
@@ -132,7 +135,11 @@ impl GfxCache {
     }
 
     /// Create a new buffer in the cache.
-    pub fn create_buffer_from_slice<T: 'static>(&mut self, name: Option<impl Into<String>>, data: &[T]) -> CacheHandle {
+    pub fn create_buffer_from_slice<T: 'static>(
+        &mut self,
+        name: Option<impl Into<String>>,
+        data: &[T],
+    ) -> CacheHandle {
         // Create the buffer.
         let buffer = unsafe { Buffer::__from_slice(data, None) };
 
@@ -312,9 +319,23 @@ impl CacheRef for CacheHandle {
     }
 }
 
+// Implement `CacheRef` for `&CacheHandle`.
+impl CacheRef for &CacheHandle {
+    fn handle(self, _: &GfxCache) -> CacheHandle {
+        self.clone()
+    }
+}
+
+// Implement `CacheRef` for `String`.
+impl CacheRef for String {
+    fn handle(self, cache: &GfxCache) -> CacheHandle {
+        cache.get_handle_of(&self).unwrap().clone()
+    }
+}
+
 // Implement `CacheRef` for `&str`.
 impl CacheRef for &str {
     fn handle(self, cache: &GfxCache) -> CacheHandle {
-        cache.get_handle_by_name(self).unwrap().clone()
+        cache.get_handle_of(self).unwrap().clone()
     }
 }

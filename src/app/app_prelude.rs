@@ -9,7 +9,6 @@ pub use crate::{
     app::*,
     class,
     color::*,
-    universe_ref::*,
     geometry::shape::*,
     gfx::{
         gfx_cache::GfxCache,
@@ -20,5 +19,6 @@ pub use crate::{
         vertex_layout::VertexInput,
         Gfx,
     },
+    universe_ref::*,
     window::WindowEvents,
 };
