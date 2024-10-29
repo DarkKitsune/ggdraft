@@ -1,5 +1,5 @@
 use std::{
-    any::{Any, TypeId},
+    any::Any,
     collections::HashMap,
     path::Path,
     rc::Rc,
@@ -33,7 +33,7 @@ struct CachedObject {
 
 /// A cache for storing graphics objects between renders.
 pub struct GfxCache {
-    objects: HashMap<TypeId, HandleMap<CachedObject>>,
+    objects: HandleMap<CachedObject>,
     names: HashMap<String, CacheHandle>,
 }
 
@@ -43,7 +43,7 @@ impl GfxCache {
     /// This function is unsafe because it should only be used on the main thread.
     pub(crate) unsafe fn new() -> Self {
         Self {
-            objects: HashMap::new(),
+            objects: HandleMap::new(),
             names: HashMap::new(),
         }
     }
@@ -52,14 +52,8 @@ impl GfxCache {
     pub fn insert<T: Any>(&mut self, name: Option<impl Into<String>>, value: T) -> CacheHandle {
         let name = name.map(|name| name.into());
 
-        // Get the type id of the value.
-        let type_id = TypeId::of::<T>();
-
-        // Get the objects hashmap for the type id.
-        let objects = self.objects.entry(type_id).or_insert_with(HandleMap::new);
-
         // Insert the value into the hashmap.
-        let handle = objects.insert(CachedObject {
+        let handle = self.objects.insert(CachedObject {
             name: name.clone(),
             object: Box::new(value),
         });
@@ -74,14 +68,8 @@ impl GfxCache {
 
     /// Get an object from the cache.
     pub fn get<T: Any>(&self, name_or_handle: impl CacheRef) -> Option<&T> {
-        // Get the type id of the value
-        let type_id = TypeId::of::<T>();
-
-        // Get the hashmap for the type id
-        let map = self.objects.get(&type_id)?;
-
         // Get the value from the hashmap
-        map.get(&name_or_handle.handle(self))
+        self.objects.get(&name_or_handle.handle(self))
             .and_then(|v| v.object.downcast_ref())
     }
 
@@ -98,17 +86,11 @@ impl GfxCache {
     /// Remove an object from the cache.
     /// Returns the removed object if it exists.
     pub fn remove<T: Any>(&mut self, name_or_handle: impl CacheRef) -> Option<T> {
-        // Get the type id of the object.
-        let type_id = TypeId::of::<T>();
-
         // Get the handle of the object.
         let handle = name_or_handle.handle(self);
 
-        // Get the objects hashmap for the type id.
-        let objects = self.objects.get_mut(&type_id)?;
-
         // Remove the object from the objects hashmap.
-        let object = objects.remove(&handle);
+        let object = self.objects.remove(&handle);
 
         // Remove the name from the names hashmap.
         if let Some(name) = object.as_ref().and_then(|o| o.name.as_deref()) {

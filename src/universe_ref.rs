@@ -9,10 +9,10 @@ pub trait UniverseRefExt {
     fn get_component_mut<T: 'static>(&mut self, component_ref: &ComponentRef<T>) -> Option<&mut T>;
 
     /// Get a reference to the class object pointed to by a `ClassRef`.
-    fn get_class<T: Class>(&self, class_ref: &ClassRef<T>) -> Option<&T>;
+    fn get_class_object<T: Class>(&self, class_ref: &ClassRef<T>) -> Option<&T>;
 
     /// Get a mutable reference to the class object pointed to by a `ClassRef`.
-    fn get_class_mut<T: Class>(&mut self, class_ref: &ClassRef<T>) -> Option<&mut T>;
+    fn get_class_object_mut<T: Class>(&mut self, class_ref: &ClassRef<T>) -> Option<&mut T>;
 }
 
 impl UniverseRefExt for Universe {
@@ -26,12 +26,12 @@ impl UniverseRefExt for Universe {
             .and_then(|node| node.component_mut::<T>())
     }
 
-    fn get_class<T: Class>(&self, class_ref: &ClassRef<T>) -> Option<&T> {
+    fn get_class_object<T: Class>(&self, class_ref: &ClassRef<T>) -> Option<&T> {
         self.node(class_ref.node_handle())
             .and_then(|node| node.class_as::<T>())
     }
 
-    fn get_class_mut<T: Class>(&mut self, class_ref: &ClassRef<T>) -> Option<&mut T> {
+    fn get_class_object_mut<T: Class>(&mut self, class_ref: &ClassRef<T>) -> Option<&mut T> {
         self.node_mut(class_ref.node_handle())
             .and_then(|node| node.class_as_mut::<T>())
     }
