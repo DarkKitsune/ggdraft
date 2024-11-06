@@ -105,6 +105,22 @@ pub fn init_render(
         },
     )?;
 
+    // Create the texture.
+    let mut regions = HashMap::new();
+    regions.insert(
+        "Test".to_string(),
+        TextureRegion::new(vector!(0, 0), vector!(64, 64), 0, 1),
+    );
+
+    let texture_handle = graphics_cache.create_texture_from_file(
+        Some("texture"),
+        TextureType::Color,
+        "assets/texture.png",
+        Some(regions),
+    )?;
+    let texture = graphics_cache.get_texture(&texture_handle).unwrap();
+    let test_region = texture.region_view("Test").unwrap();
+
     // Create the mesh
     graphics_cache.create_mesh(
         Some("mesh"),
@@ -124,23 +140,11 @@ pub fn init_render(
                 .with_center(vector!(0.3, -0.4, 0.0))
                 .with_rotation_z(0.8)
                 .with_size(vector!(1.2, 0.7))
-                .with_color(WHITE.lerp(&BLUE, 0.5)),
+                .with_color(WHITE.lerp(&BLUE, 0.5))
+                // Set the texture coordinates to the region "Test" of the texture
+                .with_texture_view_coords(&test_region),
         ],
     );
-
-    let mut regions = HashMap::new();
-    regions.insert(
-        "Test".to_string(),
-        TextureRegion::new(vector!(0, 0), vector!(64, 64), 0, 1),
-    );
-
-    // Create the texture.
-    graphics_cache.create_texture_from_file(
-        Some("texture"),
-        TextureType::Color,
-        "assets/texture.png",
-        Some(regions),
-    )?;
 
     Ok(())
 }
@@ -168,12 +172,11 @@ pub fn render(
     // Retrieve the mesh
     let mesh = graphics_cache.get("mesh").unwrap();
 
-    // Retrieve a view of the region "test" from the texture
+    // Retrieve a full view of the texture
     let texture_view = graphics_cache
         .get_texture("texture")
         .unwrap()
-        .region_view("Test")
-        .unwrap();
+        .full_view();
 
     // Set the parameters for rendering
     let mut parameters = RenderParameters::new();
