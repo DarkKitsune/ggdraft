@@ -165,8 +165,10 @@ pub fn render(
     let program = graphics_cache.get("program").unwrap();
     let input_layout = graphics_cache.get("input layout").unwrap();
 
-    // Retrieve the mesh and a full view of the texture
+    // Retrieve the mesh
     let mesh = graphics_cache.get("mesh").unwrap();
+
+    // Retrieve a view of the region "test" from the texture
     let texture_view = graphics_cache
         .get_texture("texture")
         .unwrap()

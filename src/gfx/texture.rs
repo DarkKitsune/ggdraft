@@ -158,7 +158,7 @@ impl Texture {
     pub fn region_view(&self, name: impl AsRef<str>) -> Option<TextureView> {
         let region = self.regions.as_ref()?.get(name.as_ref())?;
 
-        let dimensions = self.dimensions(region.0.z() as usize).unwrap();
+        let dimensions = self.dimensions(0).unwrap();
         let image_dimensions = vector!(dimensions.x() as f32, dimensions.y() as f32, 1.0);
 
         let min = region.0.convert_to::<f32>().unwrap() / image_dimensions;

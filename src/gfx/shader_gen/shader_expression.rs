@@ -692,7 +692,7 @@ impl Display for ShaderExpression {
                 match &*texture.operation.borrow() {
                     ShaderOperation::Uniform(name, _) => write!(
                         f,
-                        "textureLod({0}{1}, {0}{1}_min.xy + ({0}{1}_max.xy - {0}{1}_min.xy) * {2}, int({0}{1}_min.z + ({0}{1}_max.z - {0}{1}_min.z) * {3}))",
+                        "textureLod({0}{1}, {0}{1}_min.xy + ({0}{1}_max.xy - {0}{1}_min.xy) * {2}, {0}{1}_min.z + ({0}{1}_max.z - {0}{1}_min.z) * {3})",
                         SHADER_UNIFORM_PREFIX,
                         name,
                         uv,
