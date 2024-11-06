@@ -15,7 +15,7 @@ pub use crate::{
         input_parameters::RenderParameters,
         shader_gen::prelude::*,
         target_buffer::TargetBuffer,
-        texture::{Texture, TextureType, TextureView, TextureRegion},
+        texture::{Texture, TextureRegion, TextureType, TextureView},
         vertex_layout::VertexInput,
         Gfx,
     },

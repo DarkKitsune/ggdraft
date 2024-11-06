@@ -8,7 +8,8 @@ use super::{
     shader_gen::{
         shader_inputs::{ShaderInput, ShaderInputs, SHADER_INPUT_PREFIX},
         shader_outputs::{ShaderOutputs, SHADER_OUTPUT_PREFIX},
-        shader_parameters::{ShaderParameters, SHADER_UNIFORM_PREFIX}, shader_type::ShaderType,
+        shader_parameters::{ShaderParameters, SHADER_UNIFORM_PREFIX},
+        shader_type::ShaderType,
     },
     vertex_layout::VertexLayout,
 };

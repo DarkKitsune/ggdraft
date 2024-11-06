@@ -129,14 +129,17 @@ pub fn init_render(
     );
 
     let mut regions = HashMap::new();
-    regions.insert("Test".to_string(), TextureRegion(vector!(0, 0, 0), vector!(64, 64, 0)));
+    regions.insert(
+        "Test".to_string(),
+        TextureRegion(vector!(0, 0, 0), vector!(64, 64, 0)),
+    );
 
     // Create the texture.
     graphics_cache.create_texture_from_file(
         Some("texture"),
         TextureType::Color,
         "assets/texture.png",
-        Some(regions)
+        Some(regions),
     )?;
 
     Ok(())
@@ -164,7 +167,11 @@ pub fn render(
 
     // Retrieve the mesh and a full view of the texture
     let mesh = graphics_cache.get("mesh").unwrap();
-    let texture_view = graphics_cache.get_texture("texture").unwrap().region_view("Test").unwrap();
+    let texture_view = graphics_cache
+        .get_texture("texture")
+        .unwrap()
+        .region_view("Test")
+        .unwrap();
 
     // Set the parameters for rendering
     let mut parameters = RenderParameters::new();

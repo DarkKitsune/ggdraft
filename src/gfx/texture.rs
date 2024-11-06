@@ -156,23 +156,13 @@ impl Texture {
     /// Get a `TextureView` to a region of this texture.
     /// Returns `None` if the region does not exist.
     pub fn region_view(&self, name: impl AsRef<str>) -> Option<TextureView> {
-        let region = self.regions
-            .as_ref()?
-            .get(name.as_ref())?;
+        let region = self.regions.as_ref()?.get(name.as_ref())?;
 
         let dimensions = self.dimensions(region.0.z() as usize).unwrap();
-        let image_dimensions = vector!(
-            dimensions.x() as f32,
-            dimensions.y() as f32,
-            1.0
-        );
-        
-        let min = region.0
-            .convert_to::<f32>()
-            .unwrap() / image_dimensions;
-        let max = region.1
-            .convert_to::<f32>()
-            .unwrap() / image_dimensions;
+        let image_dimensions = vector!(dimensions.x() as f32, dimensions.y() as f32, 1.0);
+
+        let min = region.0.convert_to::<f32>().unwrap() / image_dimensions;
+        let max = region.1.convert_to::<f32>().unwrap() / image_dimensions;
 
         Some(TextureView {
             texture_handle: self.handle,

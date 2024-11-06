@@ -149,7 +149,10 @@ unsafe fn get_uniform_location(program: u32, name: &str) -> Result<i32> {
     let name_cstring = CString::new(format!("{}{}", SHADER_UNIFORM_PREFIX, name)).unwrap();
     let location = unsafe { gl::GetUniformLocation(program, name_cstring.as_ptr()) };
     if location == -1 {
-        Err(anyhow::anyhow!("Uniform {:?} not found in program", name_cstring))
+        Err(anyhow::anyhow!(
+            "Uniform {:?} not found in program",
+            name_cstring
+        ))
     } else {
         Ok(location)
     }
@@ -171,7 +174,7 @@ pub trait UniformValue: Any {
 impl UniformValue for f32 {
     unsafe fn set_uniform(&self, program: u32, name: &str) -> Result<()> {
         let location = get_uniform_location(program, name)?;
-        
+
         gl::Uniform1f(location, *self);
 
         Ok(())
@@ -273,7 +276,7 @@ impl UniformValue for TextureView {
 
         // Set the texture uniform
         gl::Uniform1i(texture_location, texture_unit as i32);
-        
+
         // Set the min and max uniforms (if they exist)
         if let Ok(min_location) = min_location {
             gl::Uniform3f(min_location, self.min().x(), self.min().y(), self.min().z());

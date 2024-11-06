@@ -603,10 +603,12 @@ pub trait ShaderTexture: Into<ShaderExpression> + Sized {
         let name = match a.operation.into_inner() {
             ShaderOperation::Uniform(name, value_type) => {
                 // Ensure the type is a Sampler2D.
-                value_type.ensure_type(ShaderType::Sampler2D, "argument 'self' of 'min_uv'").unwrap();
+                value_type
+                    .ensure_type(ShaderType::Sampler2D, "argument 'self' of 'min_uv'")
+                    .unwrap();
 
                 name
-            },
+            }
             _ => panic!("Expected a uniform"),
         };
 
@@ -627,10 +629,12 @@ pub trait ShaderTexture: Into<ShaderExpression> + Sized {
         let name = match a.operation.into_inner() {
             ShaderOperation::Uniform(name, value_type) => {
                 // Ensure the type is a Sampler2D.
-                value_type.ensure_type(ShaderType::Sampler2D, "argument 'self' of 'max_uv'").unwrap();
+                value_type
+                    .ensure_type(ShaderType::Sampler2D, "argument 'self' of 'max_uv'")
+                    .unwrap();
 
                 name
-            },
+            }
             _ => panic!("Expected a uniform"),
         };
 
@@ -686,7 +690,14 @@ impl Display for ShaderExpression {
             ShaderOperation::Normalized(expr) => write!(f, "normalize({})", expr),
             ShaderOperation::Sample(texture, uv, lod) => {
                 match &*texture.operation.borrow() {
-                    ShaderOperation::Uniform(name, _) => write!(f, "textureLod({0}{1}, {0}{1}_min.xy + ({0}{1}_max.xy - {0}{1}_min.xy) * {2}, int({0}{1}_min.z + ({0}{1}_max.z - {0}{1}_min.z) * {3}))", SHADER_UNIFORM_PREFIX, name, uv, lod),
+                    ShaderOperation::Uniform(name, _) => write!(
+                        f,
+                        "textureLod({0}{1}, {0}{1}_min.xy + ({0}{1}_max.xy - {0}{1}_min.xy) * {2}, int({0}{1}_min.z + ({0}{1}_max.z - {0}{1}_min.z) * {3}))",
+                        SHADER_UNIFORM_PREFIX,
+                        name,
+                        uv,
+                        lod
+                    ),
                     _ => unimplemented!(),
                 }
             }
