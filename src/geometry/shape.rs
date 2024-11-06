@@ -6,6 +6,7 @@ use ggmath::prelude::*;
 use crate::{
     color,
     gfx::{
+        texture::TextureView,
         vertex_layout::VertexLayout,
         vertex_list::{VertexList, VertexListInput},
     },
@@ -248,6 +249,13 @@ impl Rectangle {
     pub fn with_tex_coords(mut self, min: Vector2<f32>, max: Vector2<f32>) -> Self {
         self.tex_coord_min = min;
         self.tex_coord_max = max;
+        self
+    }
+
+    /// Sets the texture coordinates of the rectangle using the given `TextureView`
+    pub fn with_texture_view_coords(mut self, texture_view: &TextureView) -> Self {
+        self.tex_coord_min = texture_view.min_tex_coord();
+        self.tex_coord_max = texture_view.max_tex_coord();
         self
     }
 }

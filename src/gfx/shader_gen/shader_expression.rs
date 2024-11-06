@@ -565,14 +565,14 @@ impl ShaderVector for Vector4<f32> {}
 impl ShaderVector for Vector4<i32> {}
 
 pub trait ShaderTexture: Into<ShaderExpression> + Sized {
-    /// Samples the texture at the given UV coordinates.
+    /// Samples the texture at the given texture coordinates.
     fn sample(
         self,
-        uv: impl Into<ShaderExpression>,
+        tex_coord: impl Into<ShaderExpression>,
         level: impl Into<ShaderExpression>,
     ) -> ShaderExpression {
         let a = self.into();
-        let b = uv.into();
+        let b = tex_coord.into();
         let c = level.into();
 
         // Ensure the types are valid for sampling.
@@ -582,67 +582,15 @@ pub trait ShaderTexture: Into<ShaderExpression> + Sized {
         a_type
             .ensure_type(ShaderType::Sampler2D, "argument 'self' of 'sample'")
             .unwrap();
-        // TODO: Make this accept more dimensions of UV coordinates.
+        // TODO: Make this accept more dimensions of texture coordinates.
         b_type
-            .ensure_type(ShaderType::Vec2, "argument 'uv' of 'sample'")
+            .ensure_type(ShaderType::Vec2, "argument 'tex_coord' of 'sample'")
             .unwrap();
         c_type
-            .ensure_type(ShaderType::F32, "argument 'level' of 'sample'")
+            .ensure_type(ShaderType::F32, "argument 'tex_coord' of 'sample'")
             .unwrap();
 
         ShaderExpression::new(ShaderOperation::Sample(a, b, c))
-    }
-
-    /// Get the minimum region coordinates (Vector3).
-    /// The X and Y components correspond to the UV coordinates.
-    /// The Z component corresponds to the LOD level.
-    fn min_uv(self) -> ShaderExpression {
-        let a = self.into();
-
-        // Ensure that self's operation is a Sampler2D uniform and get the name.
-        let name = match a.operation.into_inner() {
-            ShaderOperation::Uniform(name, value_type) => {
-                // Ensure the type is a Sampler2D.
-                value_type
-                    .ensure_type(ShaderType::Sampler2D, "argument 'self' of 'min_uv'")
-                    .unwrap();
-
-                name
-            }
-            _ => panic!("Expected a uniform"),
-        };
-
-        // Create a new expression for the min UV coordinates.
-        ShaderExpression::new(ShaderOperation::Uniform(
-            format!("{}_min", name),
-            ShaderType::Vec3,
-        ))
-    }
-
-    /// Get the maximum region coordinates (Vector3).
-    /// The X and Y components correspond to the UV coordinates.
-    /// The Z component corresponds to the LOD level.
-    fn max_uv(self) -> ShaderExpression {
-        let a = self.into();
-
-        // Ensure that self's operation is a Sampler2D uniform and get the name.
-        let name = match a.operation.into_inner() {
-            ShaderOperation::Uniform(name, value_type) => {
-                // Ensure the type is a Sampler2D.
-                value_type
-                    .ensure_type(ShaderType::Sampler2D, "argument 'self' of 'max_uv'")
-                    .unwrap();
-
-                name
-            }
-            _ => panic!("Expected a uniform"),
-        };
-
-        // Create a new expression for the max UV coordinates.
-        ShaderExpression::new(ShaderOperation::Uniform(
-            format!("{}_max", name),
-            ShaderType::Vec3,
-        ))
     }
 }
 
@@ -688,14 +636,14 @@ impl Display for ShaderExpression {
             ShaderOperation::Cross(left, right) => write!(f, "cross({}, {})", left, right),
             ShaderOperation::Length(expr) => write!(f, "length({})", expr),
             ShaderOperation::Normalized(expr) => write!(f, "normalize({})", expr),
-            ShaderOperation::Sample(texture, uv, lod) => {
+            ShaderOperation::Sample(texture, tex_coord, lod) => {
                 match &*texture.operation.borrow() {
                     ShaderOperation::Uniform(name, _) => write!(
                         f,
                         "textureLod({0}{1}, {0}{1}_min.xy + ({0}{1}_max.xy - {0}{1}_min.xy) * {2}, {0}{1}_min.z + ({0}{1}_max.z - {0}{1}_min.z) * {3})",
                         SHADER_UNIFORM_PREFIX,
                         name,
-                        uv,
+                        tex_coord,
                         lod
                     ),
                     _ => unimplemented!(),
