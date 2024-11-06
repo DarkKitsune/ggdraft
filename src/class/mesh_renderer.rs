@@ -2,7 +2,7 @@ use multiverse_ecs::prelude::*;
 
 use crate::{app::app_prelude::RenderParameters, geometry::orientation::Orientation};
 
-define_class!{
+define_class! {
     /// Renders a mesh.
     /// Add nodes with the `RenderInstance` class as children to the renderer.
     pub class MeshRenderer {

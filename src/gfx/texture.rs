@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use anyhow::Result;
 use ggmath::prelude::*;
 use image::GenericImageView;
@@ -7,6 +9,7 @@ pub struct Texture {
     handle: u32,
     texture_type: TextureType,
     dimensions: Vec<Vector2<u32>>,
+    regions: Option<HashMap<String, TextureRegion>>,
 }
 
 impl !Send for Texture {}
@@ -20,6 +23,7 @@ impl Texture {
         name: impl AsRef<str>,
         texture_type: TextureType,
         lods: &[image::DynamicImage],
+        regions: Option<HashMap<String, TextureRegion>>,
     ) -> Result<Self> {
         let name = name.as_ref();
 
@@ -96,6 +100,7 @@ impl Texture {
                 handle,
                 texture_type,
                 dimensions,
+                regions,
             })
         }
     }
@@ -104,6 +109,11 @@ impl Texture {
     /// Returns `None` if the LOD does not exist.
     pub fn dimensions(&self, lod: usize) -> Option<Vector2<u32>> {
         self.dimensions.get(lod).copied()
+    }
+
+    /// Get the number of LODs in this texture.
+    pub fn lod_count(&self) -> usize {
+        self.dimensions.len()
     }
 
     /// Get the GL handle.
@@ -116,12 +126,60 @@ impl Texture {
         self.texture_type
     }
 
-    /// Get a `TextureView` pointing to this texture.
-    pub fn view(&self) -> TextureView {
+    /// Get a `TextureView` to the entirety of this texture.
+    pub fn full_view(&self) -> TextureView {
         TextureView {
             texture_handle: self.handle,
             texture_type: self.texture_type,
+            min: vector!(0.0, 0.0, 0.0),
+            max: vector!(1.0, 1.0, 1.0),
         }
+    }
+
+    /// Get a `TextureView` to the entirety of this texture at the given LOD.
+    pub fn lod_view(&self, lod: usize) -> Option<TextureView> {
+        let dimensions = self.dimensions(lod)?;
+        let image_dimensions = vector!(
+            dimensions.x() as f32,
+            dimensions.y() as f32,
+            self.dimensions.len() as f32
+        );
+
+        Some(TextureView {
+            texture_handle: self.handle,
+            texture_type: self.texture_type,
+            min: vector!(0.0, 0.0, lod as f32) / image_dimensions,
+            max: vector!(1.0, 1.0, lod as f32) / image_dimensions,
+        })
+    }
+
+    /// Get a `TextureView` to a region of this texture.
+    /// Returns `None` if the region does not exist.
+    pub fn region_view(&self, name: impl AsRef<str>) -> Option<TextureView> {
+        let region = self.regions
+            .as_ref()?
+            .get(name.as_ref())?;
+
+        let dimensions = self.dimensions(region.0.z() as usize).unwrap();
+        let image_dimensions = vector!(
+            dimensions.x() as f32,
+            dimensions.y() as f32,
+            1.0
+        );
+        
+        let min = region.0
+            .convert_to::<f32>()
+            .unwrap() / image_dimensions;
+        let max = region.1
+            .convert_to::<f32>()
+            .unwrap() / image_dimensions;
+
+        Some(TextureView {
+            texture_handle: self.handle,
+            texture_type: self.texture_type,
+            min,
+            max,
+        })
     }
 }
 
@@ -161,11 +219,25 @@ impl TextureType {
     }
 }
 
-/// Represents a view of a texture for use in rendering.
+/// Represents a region within a texture.
+/// The X and Y axes correspond to the image's pixels.
+/// The Z axis corresponds to the LOD level.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TextureRegion(pub Vector3<i32>, pub Vector3<i32>);
+
+/// Represents a view of a specific region in a texture, for sampling.
+/// The X and Y axes are the UV coordinates.
+/// The Z axis is the range of LOD levels to sample (0.0 to 1.0).
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TextureView {
     texture_handle: u32,
     texture_type: TextureType,
+    min: Vector3<f32>,
+    max: Vector3<f32>,
 }
+
+impl !Send for TextureView {}
+impl !Sync for TextureView {}
 
 impl TextureView {
     /// Get the texture handle.
@@ -177,6 +249,36 @@ impl TextureView {
     pub fn texture_type(&self) -> TextureType {
         self.texture_type
     }
+
+    /// Get the minimum coordinates.
+    pub fn min(&self) -> Vector3<f32> {
+        self.min
+    }
+
+    /// Get the maximum coordinates.
+    pub fn max(&self) -> Vector3<f32> {
+        self.max
+    }
+
+    /// Get the minimum UV coordinates.
+    pub fn min_uv(&self) -> Vector2<f32> {
+        self.min.xy()
+    }
+
+    /// Get the maximum UV coordinates.
+    pub fn max_uv(&self) -> Vector2<f32> {
+        self.max.xy()
+    }
+
+    /// Get the minimum LOD level (0.0 to 1.0)
+    pub fn min_lod(&self) -> f32 {
+        self.min.z()
+    }
+
+    /// Get the maximum LOD level (0.0 to 1.0)
+    pub fn max_lod(&self) -> f32 {
+        self.max.z()
+    }
 }
 
 impl Default for TextureView {
@@ -184,6 +286,8 @@ impl Default for TextureView {
         Self {
             texture_handle: 0,
             texture_type: TextureType::Invalid,
+            min: vector!(0.0, 0.0, 0.0),
+            max: vector!(1.0, 1.0, 1.0),
         }
     }
 }

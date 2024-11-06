@@ -94,26 +94,10 @@ impl Program {
         self.handle
     }
 
-    /// Get the location of a uniform
-    pub(crate) fn get_uniform_location(&self, name: &str) -> i32 {
-        let name_cstring = CString::new(format!("{}{}", SHADER_UNIFORM_PREFIX, name)).unwrap();
-        unsafe { gl::GetUniformLocation(self.handle, name_cstring.as_ptr()) }
-    }
-
     /// Set the value of a uniform
     pub(crate) fn set_uniform(&self, name: &str, value: &dyn UniformValue) -> Result<()> {
-        // Get the uniform location
-        let location = self.get_uniform_location(name);
-
-        // Return error if the uniform is not found
-        if location == -1 {
-            anyhow::bail!("Parameter {} not found in program", name);
-        }
-
         // Set the uniform
-        unsafe { value.set_uniform(location) };
-
-        Ok(())
+        unsafe { value.set_uniform(self.handle, name) }
     }
 
     /// Get the parameters
@@ -157,13 +141,27 @@ impl Drop for Program {
     }
 }
 
+/// Get the location of a uniform in the given program.
+/// # Safety
+/// This function is unsafe because it must be called on the main thread.
+/// It is also unsafe because it uses raw OpenGL functions.
+unsafe fn get_uniform_location(program: u32, name: &str) -> Result<i32> {
+    let name_cstring = CString::new(format!("{}{}", SHADER_UNIFORM_PREFIX, name)).unwrap();
+    let location = unsafe { gl::GetUniformLocation(program, name_cstring.as_ptr()) };
+    if location == -1 {
+        Err(anyhow::anyhow!("Uniform {:?} not found in program", name_cstring))
+    } else {
+        Ok(location)
+    }
+}
+
 /// Represents a value that can be set as a uniform
 pub trait UniformValue: Any {
     /// Copy this value to the uniform at the given location.
     /// # Safety
     /// This function is unsafe because it must be called on the main thread.
     /// It is also unsafe because it uses raw OpenGL functions.
-    unsafe fn set_uniform(&self, location: i32);
+    unsafe fn set_uniform(&self, program: u32, name: &str) -> Result<()>;
     /// Get the `ShaderType` of the uniform
     fn value_type(&self) -> ShaderType;
     /// Get the value as an `Any` trait object
@@ -171,8 +169,12 @@ pub trait UniformValue: Any {
 }
 
 impl UniformValue for f32 {
-    unsafe fn set_uniform(&self, location: i32) {
+    unsafe fn set_uniform(&self, program: u32, name: &str) -> Result<()> {
+        let location = get_uniform_location(program, name)?;
+        
         gl::Uniform1f(location, *self);
+
+        Ok(())
     }
 
     fn value_type(&self) -> ShaderType {
@@ -185,8 +187,12 @@ impl UniformValue for f32 {
 }
 
 impl UniformValue for Vector2<f32> {
-    unsafe fn set_uniform(&self, location: i32) {
+    unsafe fn set_uniform(&self, program: u32, name: &str) -> Result<()> {
+        let location = get_uniform_location(program, name)?;
+
         gl::Uniform2f(location, self.x(), self.y());
+
+        Ok(())
     }
 
     fn value_type(&self) -> ShaderType {
@@ -199,8 +205,12 @@ impl UniformValue for Vector2<f32> {
 }
 
 impl UniformValue for Vector3<f32> {
-    unsafe fn set_uniform(&self, location: i32) {
+    unsafe fn set_uniform(&self, program: u32, name: &str) -> Result<()> {
+        let location = get_uniform_location(program, name)?;
+
         gl::Uniform3f(location, self.x(), self.y(), self.z());
+
+        Ok(())
     }
 
     fn value_type(&self) -> ShaderType {
@@ -213,8 +223,12 @@ impl UniformValue for Vector3<f32> {
 }
 
 impl UniformValue for Vector4<f32> {
-    unsafe fn set_uniform(&self, location: i32) {
+    unsafe fn set_uniform(&self, program: u32, name: &str) -> Result<()> {
+        let location = get_uniform_location(program, name)?;
+
         gl::Uniform4f(location, self.x(), self.y(), self.z(), self.w());
+
+        Ok(())
     }
 
     fn value_type(&self) -> ShaderType {
@@ -227,8 +241,12 @@ impl UniformValue for Vector4<f32> {
 }
 
 impl UniformValue for Matrix4x4<f32> {
-    unsafe fn set_uniform(&self, location: i32) {
+    unsafe fn set_uniform(&self, program: u32, name: &str) -> Result<()> {
+        let location = get_uniform_location(program, name)?;
+
         gl::UniformMatrix4fv(location, 1, gl::FALSE, self.as_ptr());
+
+        Ok(())
     }
 
     fn value_type(&self) -> ShaderType {
@@ -241,7 +259,11 @@ impl UniformValue for Matrix4x4<f32> {
 }
 
 impl UniformValue for TextureView {
-    unsafe fn set_uniform(&self, location: i32) {
+    unsafe fn set_uniform(&self, program: u32, name: &str) -> Result<()> {
+        let texture_location = get_uniform_location(program, name)?;
+        let min_location = get_uniform_location(program, &format!("{}_min", name));
+        let max_location = get_uniform_location(program, &format!("{}_max", name));
+
         // Get the appropriate texture unit
         let texture_unit = self.texture_type().texture_unit_index();
 
@@ -249,8 +271,18 @@ impl UniformValue for TextureView {
         gl::ActiveTexture(gl::TEXTURE0 + texture_unit);
         gl::BindTexture(gl::TEXTURE_2D, self.handle());
 
-        // Set the uniform to the texture unit
-        gl::Uniform1i(location, texture_unit as i32);
+        // Set the texture uniform
+        gl::Uniform1i(texture_location, texture_unit as i32);
+        
+        // Set the min and max uniforms (if they exist)
+        if let Ok(min_location) = min_location {
+            gl::Uniform3f(min_location, self.min().x(), self.min().y(), self.min().z());
+        }
+        if let Ok(max_location) = max_location {
+            gl::Uniform3f(max_location, self.max().x(), self.max().y(), self.max().z());
+        }
+
+        Ok(())
     }
 
     fn value_type(&self) -> ShaderType {

@@ -1,9 +1,4 @@
-use std::{
-    any::Any,
-    collections::HashMap,
-    path::Path,
-    rc::Rc,
-};
+use std::{any::Any, collections::HashMap, path::Path, rc::Rc};
 
 use anyhow::Result;
 use ggutil::prelude::*;
@@ -17,7 +12,7 @@ use super::{
     program::Program,
     shader::{Shader, ShaderStage},
     shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs},
-    texture::{Texture, TextureType, TextureView},
+    texture::{Texture, TextureRegion, TextureType},
     vertex_layout::VertexLayout,
     vertex_list::IntoVertexList,
 };
@@ -69,7 +64,8 @@ impl GfxCache {
     /// Get an object from the cache.
     pub fn get<T: Any>(&self, name_or_handle: impl CacheRef) -> Option<&T> {
         // Get the value from the hashmap
-        self.objects.get(&name_or_handle.handle(self))
+        self.objects
+            .get(&name_or_handle.handle(self))
             .and_then(|v| v.object.downcast_ref())
     }
 
@@ -154,6 +150,7 @@ impl GfxCache {
         name: Option<impl Into<String>>,
         texture_type: TextureType,
         path: impl AsRef<Path>,
+        regions: Option<HashMap<String, TextureRegion>>,
     ) -> Result<CacheHandle> {
         let path = path.as_ref();
 
@@ -170,7 +167,7 @@ impl GfxCache {
             .map_err(|e| anyhow::anyhow!("Failed to open image file {:?}: {:?}", path, e))?;
 
         // Create the texture.
-        let texture = unsafe { Texture::__from_image(&name, texture_type, &[image])? };
+        let texture = unsafe { Texture::__from_image(&name, texture_type, &[image], regions)? };
 
         // Insert the texture into the cache.
         let handle = self.insert(Some(name), texture);
@@ -178,10 +175,9 @@ impl GfxCache {
         Ok(handle)
     }
 
-    /// Get a `TextureView` from the cache.
-    pub fn get_texture_view(&self, name_or_handle: impl CacheRef) -> Option<TextureView> {
-        let texture = self.get::<Texture>(name_or_handle)?;
-        Some(texture.view())
+    /// Get a texture from the cache.
+    pub fn get_texture(&self, name_or_handle: impl CacheRef) -> Option<&Texture> {
+        self.get::<Texture>(name_or_handle)
     }
 
     /// Create a new mesh in the cache from the given vertex list.

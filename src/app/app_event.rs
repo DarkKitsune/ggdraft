@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::app_prelude::*;
 
 // Called when the app is initialized
@@ -90,12 +92,12 @@ pub fn init_render(
             // Get the tex_coord input
             let tex_coord = inputs.get("tex_coord")?;
 
-            // Get the texture_color texture
-            let color_texture = parameters.get::<TextureView>("color_texture");
+            // Get the texture_color texture view
+            let color_view = parameters.get::<TextureView>("color_texture");
 
             // Output color = input color * texture color
             let input_color = inputs.get("color")?;
-            let texture_color = color_texture.sample(tex_coord, 0);
+            let texture_color = color_view.sample(tex_coord, 0.0);
             let output_color = input_color.mul(texture_color);
             outputs.set_fragment_color(output_color);
 
@@ -112,28 +114,29 @@ pub fn init_render(
                 .with_center(vector!(0.1, 0.2, 0.0))
                 .with_rotation_z(0.2)
                 .with_size(vector!(1.1, 0.8))
-                .with_color(WHITE.lerp(&RED, 0.5))
-                .with_tex_coords(vector!(0.0, 0.0), vector!(1.0, 1.0)),
+                .with_color(WHITE.lerp(&RED, 0.5)),
             Rectangle::default()
                 .with_center(vector!(-0.5, -0.2, 0.0))
                 .with_rotation_z(0.5)
                 .with_size(vector!(0.9, 1.3))
-                .with_color(WHITE.lerp(&GREEN, 0.5))
-                .with_tex_coords(vector!(0.0, 0.0), vector!(0.5, 1.0)),
+                .with_color(WHITE.lerp(&GREEN, 0.5)),
             Rectangle::default()
                 .with_center(vector!(0.3, -0.4, 0.0))
                 .with_rotation_z(0.8)
                 .with_size(vector!(1.2, 0.7))
-                .with_color(WHITE.lerp(&BLUE, 0.5))
-                .with_tex_coords(vector!(0.5, 0.0), vector!(1.0, 1.0)),
+                .with_color(WHITE.lerp(&BLUE, 0.5)),
         ],
     );
+
+    let mut regions = HashMap::new();
+    regions.insert("Test".to_string(), TextureRegion(vector!(0, 0, 0), vector!(64, 64, 0)));
 
     // Create the texture.
     graphics_cache.create_texture_from_file(
         Some("texture"),
         TextureType::Color,
         "assets/texture.png",
+        Some(regions)
     )?;
 
     Ok(())
@@ -159,9 +162,9 @@ pub fn render(
     let program = graphics_cache.get("program").unwrap();
     let input_layout = graphics_cache.get("input layout").unwrap();
 
-    // Retrieve the mesh and texture
+    // Retrieve the mesh and a full view of the texture
     let mesh = graphics_cache.get("mesh").unwrap();
-    let texture_view = graphics_cache.get_texture_view("texture").unwrap();
+    let texture_view = graphics_cache.get_texture("texture").unwrap().region_view("Test").unwrap();
 
     // Set the parameters for rendering
     let mut parameters = RenderParameters::new();

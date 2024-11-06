@@ -2,7 +2,7 @@ use anyhow::Result;
 use ggmath::prelude::*;
 
 use super::{
-    input_layout::{InputLayout, VERTEX_BUFFER_LOCATION},
+    input_layout::{InputLayout, _VERTEX_BUFFER_LOCATION},
     input_parameters::RenderParameters,
     mesh::Mesh,
     program::Program,
@@ -50,11 +50,9 @@ impl TargetBuffer {
         parameters: &RenderParameters,
         mesh: &Mesh,
     ) -> Result<()> {
-        let vertex_buffer = &mesh.vertex_buffer;
-        let index_buffer = &mesh.index_buffer;
-
-        // Get the index count.
-        let index_count = index_buffer.len();
+        let vertex_buffer = mesh.vertex_buffer();
+        let index_buffer = mesh.index_buffer();
+        let index_count = mesh.index_count();
 
         // Return early if index_count == 0.
         if index_count == 0 {
@@ -77,7 +75,7 @@ impl TargetBuffer {
             gl::BindFramebuffer(gl::FRAMEBUFFER, self.handle);
             gl::BindVertexArray(input_layout.vertex_array_handle());
             gl::BindVertexBuffer(
-                VERTEX_BUFFER_LOCATION,
+                _VERTEX_BUFFER_LOCATION,
                 vertex_buffer.handle(),
                 0,
                 input_layout.byte_stride() as i32,
@@ -103,7 +101,7 @@ impl TargetBuffer {
 
             // Unbind everything.
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
-            gl::BindVertexBuffer(VERTEX_BUFFER_LOCATION, 0, 0, 0);
+            gl::BindVertexBuffer(_VERTEX_BUFFER_LOCATION, 0, 0, 0);
             gl::BindVertexArray(0);
             gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
         }

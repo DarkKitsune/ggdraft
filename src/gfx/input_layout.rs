@@ -8,13 +8,13 @@ use super::{
     shader_gen::{
         shader_inputs::{ShaderInput, ShaderInputs, SHADER_INPUT_PREFIX},
         shader_outputs::{ShaderOutputs, SHADER_OUTPUT_PREFIX},
-        shader_parameters::{ShaderParameters, SHADER_UNIFORM_PREFIX},
+        shader_parameters::{ShaderParameters, SHADER_UNIFORM_PREFIX}, shader_type::ShaderType,
     },
     vertex_layout::VertexLayout,
 };
 
 // The location the vertex buffer should be bound to.
-pub(crate) const VERTEX_BUFFER_LOCATION: u32 = 0;
+pub(crate) const _VERTEX_BUFFER_LOCATION: u32 = 0;
 // The location the instance buffer should be bound to.
 pub(crate) const _INSTANCE_BUFFER_LOCATION: u32 = 1;
 
@@ -51,7 +51,7 @@ impl InputLayout {
                     gl::FALSE,
                     offset as u32,
                 );
-                gl::VertexArrayAttribBinding(handle, index as u32, VERTEX_BUFFER_LOCATION);
+                gl::VertexArrayAttribBinding(handle, index as u32, _VERTEX_BUFFER_LOCATION);
                 gl::VertexArrayBindingDivisor(handle, index as u32, 0);
                 offset += input.component_count() * std::mem::size_of::<f32>();
             }
@@ -258,12 +258,28 @@ impl InputLayout {
 
         // Add the uniforms from the shader parameters.
         for parameter in parameters.iter() {
+            let parameter_type = parameter.value_type();
+
             code += &format!(
                 "uniform {} {}{};\n",
-                parameter.value_type().glsl_name(),
+                parameter_type.glsl_name(),
                 SHADER_UNIFORM_PREFIX,
                 parameter.name()
             );
+
+            // Add min and max uniforms if this is a sampler type.
+            if parameter_type == ShaderType::Sampler2D {
+                code += &format!(
+                    "uniform vec3 {}{}_min;\n",
+                    SHADER_UNIFORM_PREFIX,
+                    parameter.name()
+                );
+                code += &format!(
+                    "uniform vec3 {}{}_max;\n",
+                    SHADER_UNIFORM_PREFIX,
+                    parameter.name()
+                );
+            }
         }
 
         // Add the fragment color output.
