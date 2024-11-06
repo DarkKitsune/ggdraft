@@ -116,6 +116,28 @@ impl Texture {
         self.dimensions.len()
     }
 
+    /// Get the given texture region.
+    pub fn region(&self, name: impl AsRef<str>) -> Option<&TextureRegion> {
+        self.regions.as_ref()?.get(name.as_ref())
+    }
+
+    /// Get the min and max UV coordinates of the given texture region.
+    pub fn region_uv(&self, name: impl AsRef<str>) -> Option<(Vector2<f32>, Vector2<f32>)> {
+        let region = self.region(name)?;
+        let dimensions = self.dimensions(0)?.convert_to::<f32>().unwrap();
+
+        Some((
+            region.min_pixel().convert_to::<f32>().unwrap() / dimensions,
+            region.max_pixel().convert_to::<f32>().unwrap() / dimensions,
+        ))
+    }
+
+    /// Get the min and max LOD levels of the given texture region.
+    pub fn region_lod_levels(&self, name: impl AsRef<str>) -> Option<(u32, u32)> {
+        let region = self.region(name)?;
+        Some((region.min_lod(), region.max_lod()))
+    }
+
     /// Get the GL handle.
     pub fn handle(&self) -> u32 {
         self.handle
@@ -139,36 +161,32 @@ impl Texture {
     /// Get a `TextureView` to the entirety of this texture at the given LOD.
     pub fn lod_view(&self, lod: usize) -> Option<TextureView> {
         let dimensions = self.dimensions(lod)?;
-        let image_dimensions = vector!(
+        let to_uv_levels = vector!(
             dimensions.x() as f32,
             dimensions.y() as f32,
-            self.dimensions.len() as f32
+            1.0
         );
 
         Some(TextureView {
             texture_handle: self.handle,
             texture_type: self.texture_type,
-            min: vector!(0.0, 0.0, lod as f32) / image_dimensions,
-            max: vector!(1.0, 1.0, lod as f32) / image_dimensions,
+            min: vector!(0.0, 0.0, lod as f32) / to_uv_levels,
+            max: vector!(1.0, 1.0, lod as f32) / to_uv_levels,
         })
     }
 
     /// Get a `TextureView` to a region of this texture.
     /// Returns `None` if the region does not exist.
     pub fn region_view(&self, name: impl AsRef<str>) -> Option<TextureView> {
-        let region = self.regions.as_ref()?.get(name.as_ref())?;
-
-        let dimensions = self.dimensions(0).unwrap();
-        let image_dimensions = vector!(dimensions.x() as f32, dimensions.y() as f32, 1.0);
-
-        let min = region.0.convert_to::<f32>().unwrap() / image_dimensions;
-        let max = region.1.convert_to::<f32>().unwrap() / image_dimensions;
+        let name = name.as_ref();
+        let (min, max) = self.region_uv(name)?;
+        let (min_lod, max_lod) = self.region_lod_levels(name)?;
 
         Some(TextureView {
             texture_handle: self.handle,
             texture_type: self.texture_type,
-            min,
-            max,
+            min: min.append(min_lod as f32),
+            max: max.append(max_lod as f32),
         })
     }
 }
@@ -213,7 +231,93 @@ impl TextureType {
 /// The X and Y axes correspond to the image's pixels.
 /// The Z axis corresponds to the LOD level.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TextureRegion(pub Vector3<i32>, pub Vector3<i32>);
+pub struct TextureRegion {
+    min: Vector3<i32>,
+    max: Vector3<i32>,
+}
+
+impl TextureRegion {
+    /// Create a new texture region with the given top-left coordinate, size, and LOD levels.
+    pub const fn new(top_left: Vector2<i32>, size: Vector2<i32>, min_level: u32, levels: u32) -> Self {
+        let min = top_left.append(min_level as i32);
+        let max = vector!(
+            top_left.x() + size.x(),
+            top_left.y() + size.y(),
+            min.z() + levels.saturating_sub(1) as i32
+        );
+        Self::from_min_max(min, max)
+    }
+
+    /// Create a new texture region with the given minimum and maximum coordinates & LOD levels.
+    pub const fn from_min_max(min: Vector3<i32>, max: Vector3<i32>) -> Self {
+        const fn const_max(a: i32, b: i32) -> i32 {
+            if a > b {
+                a
+            } else {
+                b
+            }
+        }
+
+        // Ensure that the LOD levels are non-negative.
+        let min = vector!(
+            min.x(),
+            min.y(),
+            const_max(min.z(), 0)
+        );
+        let max = vector!(
+            max.x(),
+            max.y(),
+            const_max(max.z(), 0)
+        );
+
+        Self { min, max }
+    }
+
+    /// Get the minimum coordinates.
+    pub fn min(&self) -> Vector3<i32> {
+        self.min
+    }
+
+    /// Get the maximum coordinates.
+    pub fn max(&self) -> Vector3<i32> {
+        self.max
+    }
+
+    /// Get the minimum pixel coordinates.
+    pub fn min_pixel(&self) -> Vector2<i32> {
+        self.min.xy()
+    }
+
+    /// Get the maximum pixel coordinates.
+    pub fn max_pixel(&self) -> Vector2<i32> {
+        self.max.xy()
+    }
+
+    /// Get the minimum LOD level.
+    pub fn min_lod(&self) -> u32 {
+        self.min.z() as u32
+    }
+
+    /// Get the maximum LOD level.
+    pub fn max_lod(&self) -> u32 {
+        self.max.z() as u32
+    }
+
+    /// Get the width of this region.
+    pub fn width(&self) -> u32 {
+        (self.max.x() - self.min.x()) as u32
+    }
+
+    /// Get the height of this region.
+    pub fn height(&self) -> u32 {
+        (self.max.y() - self.min.y()) as u32
+    }
+
+    /// Get the number of LOD levels in this region.
+    pub fn lod_count(&self) -> u32 {
+        (self.max.z() - self.min.z()) as u32
+    }
+}
 
 /// Represents a view of a specific region in a texture, for sampling.
 /// The X and Y axes are the UV coordinates.

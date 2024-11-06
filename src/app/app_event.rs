@@ -131,7 +131,7 @@ pub fn init_render(
     let mut regions = HashMap::new();
     regions.insert(
         "Test".to_string(),
-        TextureRegion(vector!(0, 0, 0), vector!(64, 64, 0)),
+        TextureRegion::new(vector!(0, 0), vector!(64, 64), 0, 1),
     );
 
     // Create the texture.
