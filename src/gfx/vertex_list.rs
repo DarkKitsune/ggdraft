@@ -19,7 +19,7 @@ pub enum VertexListInput<'a> {
 
 impl<'a> VertexListInput<'a> {
     /// Get the input type.
-    pub fn input_type(&self) -> VertexInput {
+    pub const fn input_type(&self) -> VertexInput {
         match self {
             VertexListInput::Position(_) => VertexInput::Position,
             VertexListInput::Normal(_) => VertexInput::Normal,
@@ -29,7 +29,7 @@ impl<'a> VertexListInput<'a> {
     }
 
     /// Get the number of inputs.
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         match self {
             VertexListInput::Position(data) => data.len(),
             VertexListInput::Normal(data) => data.len(),

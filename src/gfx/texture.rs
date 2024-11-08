@@ -267,47 +267,42 @@ impl TextureRegion {
     }
 
     /// Get the minimum coordinates.
-    pub fn min(&self) -> Vector3<i32> {
+    pub const fn min(&self) -> Vector3<i32> {
         self.min
     }
 
     /// Get the maximum coordinates.
-    pub fn max(&self) -> Vector3<i32> {
+    pub const fn max(&self) -> Vector3<i32> {
         self.max
     }
 
     /// Get the minimum pixel coordinates.
-    pub fn min_pixel(&self) -> Vector2<i32> {
+    pub const fn min_pixel(&self) -> Vector2<i32> {
         self.min.xy()
     }
 
     /// Get the maximum pixel coordinates.
-    pub fn max_pixel(&self) -> Vector2<i32> {
+    pub const fn max_pixel(&self) -> Vector2<i32> {
         self.max.xy()
     }
 
+    /// Get the pixel size (width, height) of this region.
+    pub const fn pixel_size(&self) -> Vector2<i32> {
+        vector!(self.max.x() - self.min.x(), self.max.y() - self.min.y())
+    }
+
     /// Get the minimum LOD level.
-    pub fn min_lod(&self) -> u32 {
+    pub const fn min_lod(&self) -> u32 {
         self.min.z() as u32
     }
 
     /// Get the maximum LOD level.
-    pub fn max_lod(&self) -> u32 {
+    pub const fn max_lod(&self) -> u32 {
         self.max.z() as u32
     }
 
-    /// Get the width of this region.
-    pub fn width(&self) -> u32 {
-        (self.max.x() - self.min.x()) as u32
-    }
-
-    /// Get the height of this region.
-    pub fn height(&self) -> u32 {
-        (self.max.y() - self.min.y()) as u32
-    }
-
     /// Get the number of LOD levels in this region.
-    pub fn lod_count(&self) -> u32 {
+    pub const fn lod_count(&self) -> u32 {
         (self.max.z() - self.min.z()) as u32
     }
 }

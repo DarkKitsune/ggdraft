@@ -8,7 +8,11 @@ pub struct Orientation {
 }
 
 impl Orientation {
-    pub fn new(position: Vector3<f32>, rotation: Quaternion<f32>, scale: Vector3<f32>) -> Self {
+    pub const fn new(
+        position: Vector3<f32>,
+        rotation: Quaternion<f32>,
+        scale: Vector3<f32>,
+    ) -> Self {
         Self {
             position,
             rotation,
@@ -17,32 +21,32 @@ impl Orientation {
     }
 
     /// Get the position.
-    pub fn position(&self) -> Vector3<f32> {
+    pub const fn position(&self) -> Vector3<f32> {
         self.position
     }
 
     /// Get the rotation.
-    pub fn rotation(&self) -> Quaternion<f32> {
+    pub const fn rotation(&self) -> Quaternion<f32> {
         self.rotation
     }
 
     /// Get the scale.
-    pub fn scale(&self) -> Vector3<f32> {
+    pub const fn scale(&self) -> Vector3<f32> {
         self.scale
     }
 
     /// Set the position.
-    pub fn set_position(&mut self, position: Vector3<f32>) {
+    pub const fn set_position(&mut self, position: Vector3<f32>) {
         self.position = position;
     }
 
     /// Set the rotation.
-    pub fn set_rotation(&mut self, rotation: Quaternion<f32>) {
+    pub const fn set_rotation(&mut self, rotation: Quaternion<f32>) {
         self.rotation = rotation;
     }
 
     /// Set the scale.
-    pub fn set_scale(&mut self, scale: Vector3<f32>) {
+    pub const fn set_scale(&mut self, scale: Vector3<f32>) {
         self.scale = scale;
     }
 

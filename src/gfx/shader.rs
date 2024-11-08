@@ -101,7 +101,7 @@ pub enum ShaderStage {
 
 impl ShaderStage {
     /// Convert to the corresponding GL enum
-    pub fn to_gl_enum(&self) -> u32 {
+    pub const fn to_gl_enum(&self) -> u32 {
         match self {
             ShaderStage::Vertex => gl::VERTEX_SHADER,
             ShaderStage::Fragment => gl::FRAGMENT_SHADER,

@@ -16,7 +16,7 @@ pub enum VertexInput {
 
 impl VertexInput {
     /// Get the # of components for this input.
-    pub fn component_count(&self) -> usize {
+    pub const fn component_count(&self) -> usize {
         match self {
             VertexInput::Position => 3,
             VertexInput::Normal => 3,
@@ -26,12 +26,12 @@ impl VertexInput {
     }
 
     /// Get the byte size of this input.
-    pub fn byte_size(&self) -> usize {
+    pub const fn byte_size(&self) -> usize {
         self.component_count() * std::mem::size_of::<VertexComponent>()
     }
 
     /// Get the name of this input.
-    pub fn name(&self) -> &str {
+    pub const fn name(&self) -> &str {
         match self {
             VertexInput::Position => "Position",
             VertexInput::Normal => "Normal",
@@ -41,7 +41,7 @@ impl VertexInput {
     }
 
     /// Get the corresponding shader type of this input.
-    pub fn shader_type(&self) -> ShaderType {
+    pub const fn shader_type(&self) -> ShaderType {
         match self {
             VertexInput::Position => ShaderType::Vec3,
             VertexInput::Normal => ShaderType::Vec3,

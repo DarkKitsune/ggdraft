@@ -23,7 +23,7 @@ impl TargetBuffer {
 
     /// Get the GL handle.
     /// Returns 0 if this is the default framebuffer.
-    pub fn handle(&self) -> u32 {
+    pub const fn handle(&self) -> u32 {
         self.handle
     }
 

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, vec};
 
 use anyhow::Result;
 use ggmath::prelude::*;
@@ -33,7 +33,7 @@ impl ShapeTriangles {
     /// # Safety
     /// This function is unsafe because it does not check if the indices are valid.
     /// It also does not check other arguments.
-    pub(crate) unsafe fn new_unchecked(
+    pub(crate) const unsafe fn new_unchecked(
         positions: Vec<Vector3<f32>>,
         normals: Vec<Vector3<f32>>,
         colors: Vec<Vector4<f32>>,
@@ -85,7 +85,7 @@ impl ShapeTriangles {
 
     /// Creates an empty `ShapeTriangles`.
     /// This is useful for appending shapes.
-    pub fn empty() -> Result<Self> {
+    pub const fn empty() -> Result<Self> {
         Ok(Self {
             positions: Vec::new(),
             normals: Vec::new(),
@@ -183,7 +183,7 @@ pub struct Rectangle {
 
 impl Rectangle {
     /// Creates a new rectangle.
-    pub fn new(
+    pub const fn new(
         center: Vector3<f32>,
         size: Vector2<f32>,
         rotation: Quaternion<f32>,
@@ -192,36 +192,36 @@ impl Rectangle {
         Self {
             orientation: Orientation::new(center, rotation, vector!(size.x(), size.y(), 1.0)),
             color,
-            tex_coord_min: Vector::zero(),
-            tex_coord_max: Vector::one(),
+            tex_coord_min: vector!(0.0, 0.0),
+            tex_coord_max: vector!(1.0, 1.0),
         }
     }
 
     /// Creates a new rectangle using the given orientation.
     /// The size of the rectangle will be the orientation's scale.
-    pub fn from_orientation(orientation: Orientation, color: Vector4<f32>) -> Self {
+    pub const fn from_orientation(orientation: Orientation, color: Vector4<f32>) -> Self {
         Self {
             orientation,
             color,
-            tex_coord_min: Vector::zero(),
-            tex_coord_max: Vector::one(),
+            tex_coord_min: vector!(0.0, 0.0),
+            tex_coord_max: vector!(1.0, 1.0),
         }
     }
 
     /// Sets the center of the rectangle.
-    pub fn with_center(mut self, center: Vector3<f32>) -> Self {
+    pub const fn with_center(mut self, center: Vector3<f32>) -> Self {
         self.orientation.set_position(center);
         self
     }
 
     /// Sets the size of the rectangle.
-    pub fn with_size(mut self, size: Vector2<f32>) -> Self {
+    pub const fn with_size(mut self, size: Vector2<f32>) -> Self {
         self.orientation.set_scale(vector!(size.x(), size.y(), 1.0));
         self
     }
 
     /// Sets the rotation of the rectangle.
-    pub fn with_rotation(mut self, rotation: Quaternion<f32>) -> Self {
+    pub const fn with_rotation(mut self, rotation: Quaternion<f32>) -> Self {
         self.orientation.set_rotation(rotation);
         self
     }
@@ -234,19 +234,19 @@ impl Rectangle {
     }
 
     /// Sets the orientation of the rectangle.
-    pub fn with_orientation(mut self, orientation: Orientation) -> Self {
+    pub const fn with_orientation(mut self, orientation: Orientation) -> Self {
         self.orientation = orientation;
         self
     }
 
     /// Sets the color of the rectangle.
-    pub fn with_color(mut self, color: Vector4<f32>) -> Self {
+    pub const fn with_color(mut self, color: Vector4<f32>) -> Self {
         self.color = color;
         self
     }
 
     /// Sets the texture coordinates of the rectangle.
-    pub fn with_tex_coords(mut self, min: Vector2<f32>, max: Vector2<f32>) -> Self {
+    pub const fn with_tex_coords(mut self, min: Vector2<f32>, max: Vector2<f32>) -> Self {
         self.tex_coord_min = min;
         self.tex_coord_max = max;
         self

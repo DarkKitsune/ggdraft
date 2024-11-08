@@ -173,10 +173,7 @@ pub fn render(
     let mesh = graphics_cache.get("mesh").unwrap();
 
     // Retrieve a full view of the texture
-    let texture_view = graphics_cache
-        .get_texture("texture")
-        .unwrap()
-        .full_view();
+    let texture_view = graphics_cache.get_texture("texture").unwrap().full_view();
 
     // Set the parameters for rendering
     let mut parameters = RenderParameters::new();
