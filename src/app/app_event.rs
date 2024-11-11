@@ -89,15 +89,17 @@ pub fn init_render(
         },
         // Fragment shader
         |inputs, parameters, outputs| {
-            // Get the tex_coord input
-            let tex_coord = inputs.get("tex_coord")?;
+            // Get the inputs
+            let input_tex_coord = inputs.get("tex_coord")?;
+            let input_color = inputs.get("color")?;
 
             // Get the texture_color texture view
             let color_view = parameters.get::<TextureView>("color_texture");
+            
+            // Sample the texture color at the input texture coordinates
+            let texture_color = color_view.sample(input_tex_coord, 0.0);
 
-            // Output color = input color * texture color
-            let input_color = inputs.get("color")?;
-            let texture_color = color_view.sample(tex_coord, 0.0);
+            // Fragment color = input color * texture color
             let output_color = input_color * texture_color;
             outputs.set_fragment_color(output_color);
 
