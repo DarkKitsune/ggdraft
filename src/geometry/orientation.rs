@@ -36,6 +36,12 @@ impl Orientation {
         self.scale
     }
 
+    /// Get the average scale.
+    /// This is the average of the x, y, and z components of the scale.
+    pub const fn average_scale(&self) -> f32 {
+        (self.scale.x() + self.scale.y() + self.scale.z()) / 3.0
+    }
+
     /// Set the position.
     pub const fn set_position(&mut self, position: Vector3<f32>) {
         self.position = position;
@@ -129,6 +135,11 @@ pub trait HasOrientation {
         self.orientation().scale()
     }
 
+    /// Get the average scale of the object.
+    fn average_scale(&self) -> f32 {
+        self.orientation().average_scale()
+    }
+
     /// Set the position of the object.
     fn set_position(&mut self, position: Vector3<f32>) {
         self.orientation_mut().set_position(position);
@@ -147,6 +158,11 @@ pub trait HasOrientation {
     /// Get the transformation matrix of the object.
     fn get_transform(&self) -> Matrix4x4<f32> {
         self.orientation().get_transform()
+    }
+
+    /// Get the rotation matrix of the object.
+    fn get_rotation_matrix(&self) -> Matrix3x3<f32> {
+        self.orientation().rotation().to_matrix()
     }
 
     /// Convert a point from local space to world space.
