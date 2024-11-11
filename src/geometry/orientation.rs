@@ -1,6 +1,7 @@
 use ggmath::prelude::*;
 
 /// Represents the orientation of an object in 3D space.
+#[derive(Debug, Clone)]
 pub struct Orientation {
     position: Vector3<f32>,
     rotation: Quaternion<f32>,

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::gfx::render_camera::RenderCamera;
+
 use super::app_prelude::*;
 
 // Called when the app is initialized
@@ -72,9 +74,19 @@ pub fn init_render(
         // Name of the input layout to use
         "input layout",
         // Vertex shader
-        |inputs, _parameters, outputs| {
-            // Set the vertex position to the input position
-            outputs.set_vertex_position(inputs.get(VertexInput::Position)?.append(1.0));
+        |inputs, parameters, outputs| {
+            // Get the vertex input position
+            let position = inputs.get(VertexInput::Position)?;
+
+            // Get the view and projection matrices
+            let view_matrix = parameters.get_view_matrix();
+            let projection_matrix = parameters.get_projection_matrix();
+
+            // Convert the input position to screen space
+            let screen_space = projection_matrix * view_matrix * position.append(1.0);
+
+            // Output the screen space position
+            outputs.set_vertex_position(screen_space);
 
             // Set the color to the input color, or white if no color is provided
             outputs.set(
@@ -95,7 +107,7 @@ pub fn init_render(
 
             // Get the texture_color texture view
             let color_view = parameters.get::<TextureView>("color_texture");
-            
+
             // Sample the texture color at the input texture coordinates
             let texture_color = color_view.sample(input_tex_coord, 0.0);
 
@@ -130,18 +142,18 @@ pub fn init_render(
         vec![
             Rectangle::default()
                 .with_center(vector!(0.1, 0.2, 0.0))
-                .with_rotation_z(0.2)
+                .with_rotation(Quaternion::from_rotation_x(0.3) * Quaternion::from_rotation_y(0.2))
                 .with_size(vector!(1.1, 0.8))
                 .with_color(WHITE.lerp(&RED, 0.5)),
             Rectangle::default()
-                .with_center(vector!(-0.5, -0.2, 0.0))
-                .with_rotation_z(0.5)
+                .with_center(vector!(-0.5, -1.2, -1.2))
+                .with_rotation(Quaternion::from_rotation_y(0.5) * Quaternion::from_rotation_z(0.3))
                 .with_size(vector!(0.9, 1.3))
                 .with_color(WHITE.lerp(&GREEN, 0.5)),
             Rectangle::default()
-                .with_center(vector!(0.3, -0.4, 0.0))
-                .with_rotation_z(0.8)
-                .with_size(vector!(1.2, 0.7))
+                .with_center(vector!(1.3, -0.4, 0.4))
+                .with_rotation(Quaternion::from_rotation_z(0.7) * Quaternion::from_rotation_x(0.4))
+                .with_size(vector!(1.2, 2.7))
                 .with_color(WHITE.lerp(&BLUE, 0.5))
                 // Set the texture coordinates to the region "Test" of the texture
                 .with_texture_view_coords(&test_region),
@@ -158,14 +170,14 @@ pub fn render(
     _async_data: AppData<AsyncData>,
     graphics_cache: &mut GfxCache,
     framebuffer: TargetBuffer,
+    framebuffer_size: Vector2<u32>,
 ) -> AppEventResult<()> {
-    // Clear color is a mix of blue, gray, and white
-    let clear_color = BLUE // Start with blue
-        .lerp(&GRAY, 0.5) // Mix 50% with gray
-        .lerp(&WHITE, 0.25); // Mix 25% with white
-
-    // Clear the framebuffer with the clear color.
-    framebuffer.clear_with_color(clear_color);
+    // Clear the framebuffer with a color
+    framebuffer.clear_with_color(
+        BLUE // Start with blue
+            .lerp(&GRAY, 0.5) // Mix 50% with gray
+            .lerp(&WHITE, 0.25), // Mix 25% with white
+    );
 
     // Retrieve the program and input layout
     let program = graphics_cache.get("program").unwrap();
@@ -177,9 +189,19 @@ pub fn render(
     // Retrieve a full view of the texture
     let texture_view = graphics_cache.get_texture("texture").unwrap().full_view();
 
-    // Set the parameters for rendering
+    // Begin the parameters for rendering
     let mut parameters = RenderParameters::new();
+
+    // Set the texture view in color_texture
     parameters.set("color_texture", texture_view);
+
+    // Set the camera matrices
+    let target = Vector::zero();
+    let rotation = Quaternion::identity();
+    parameters.set_camera(
+        framebuffer_size.convert_to().unwrap(),
+        &RenderCamera::perspective_looking_at(target, rotation, 3.0, 90.0, 0.01, 100.0),
+    );
 
     // Draw the triangle
     framebuffer.render_mesh(program, input_layout, &parameters, &mesh)?;

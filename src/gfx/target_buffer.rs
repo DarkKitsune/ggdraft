@@ -3,9 +3,9 @@ use ggmath::prelude::*;
 
 use super::{
     input_layout::{InputLayout, _VERTEX_BUFFER_LOCATION},
-    input_parameters::RenderParameters,
     mesh::Mesh,
     program::Program,
+    render_parameters::RenderParameters,
 };
 
 /// Represents a GL buffer for rendering to.

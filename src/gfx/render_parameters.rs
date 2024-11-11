@@ -2,6 +2,7 @@ use ggmath::prelude::*;
 
 use super::{
     program::UniformValue,
+    render_camera::RenderCamera,
     shader_gen::shader_parameters::{
         PARAMETER_MODEL_MATRIX, PARAMETER_PROJECTION_MATRIX, PARAMETER_VIEW_MATRIX,
     },
@@ -57,6 +58,7 @@ impl RenderParameters {
 
     /// Set the projection matrix.
     /// The actual name of the parameter is `ShaderParameter::PARAMETER_PROJECTION_MATRIX`.
+    /// You can also use `RenderParameters::set_camera` to set the view and projection matrices from a `RenderCamera`.
     pub fn set_projection_matrix(&mut self, matrix: Matrix4x4<f32>) {
         self.set(PARAMETER_PROJECTION_MATRIX, matrix);
     }
@@ -69,6 +71,8 @@ impl RenderParameters {
 
     /// Set the model matrix.
     /// The actual name of the parameter is `ShaderParameter::PARAMETER_MODEL_MATRIX`.
+    /// This is the matrix that transforms vertices from model space to world space.
+    /// You can also use `RenderParameters::set_camera` to set the view and projection matrices from a `RenderCamera``.
     pub fn set_model_matrix(&mut self, matrix: Matrix4x4<f32>) {
         self.set(PARAMETER_MODEL_MATRIX, matrix);
     }
@@ -77,5 +81,11 @@ impl RenderParameters {
     pub fn get_model_matrix(&self) -> Option<&Matrix4x4<f32>> {
         self.get(PARAMETER_MODEL_MATRIX)
             .map(|v| v.as_any().downcast_ref().unwrap())
+    }
+
+    /// Set the view and projection matrices from a camera.
+    pub fn set_camera(&mut self, viewport_size: Vector2<f32>, camera: &RenderCamera) {
+        self.set_view_matrix(camera.get_view_matrix());
+        self.set_projection_matrix(camera.get_projection_matrix(viewport_size));
     }
 }

@@ -72,6 +72,10 @@ pub async fn run() -> Result<()> {
         // Start an engine iteration.
         engine.start_iteration();
 
+        // Store the window size for later use.
+        let (window_width, window_height) = window.get_framebuffer_size();
+        let window_size = vector!(window_width as u32, window_height as u32);
+
         // Check for window events.
         let events = window::get_window_events(&mut glfw, &events);
 
@@ -109,6 +113,7 @@ pub async fn run() -> Result<()> {
                 async_data.clone(),
                 cache,
                 Gfx::get().default_framebuffer(),
+                window_size,
             )
         })?;
 

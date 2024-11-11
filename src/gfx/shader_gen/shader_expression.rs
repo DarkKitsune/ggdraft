@@ -273,9 +273,16 @@ pub trait ShaderMath: Into<ShaderExpression> + Sized {
         let a: ShaderExpression = self.into();
         let b: ShaderExpression = other.into();
 
-        // Ensure the types are valid for multiplication.
+        // Exit early if the left side is a 4x4 matrix and the right side is a 4 component vector.
+        if let ShaderType::Mat4 = a.shader_type().unwrap() {
+            if let ShaderType::Vec4 = b.shader_type().unwrap() {
+                return ShaderExpression::new(ShaderOperation::Mul(a, b));
+            }
+        }
         let a_type = a.shader_type().unwrap();
         let b_type = b.shader_type().unwrap();
+
+        // Ensure the types are valid for multiplication.
         a_type.ensure_math_compatible(b_type, "mul").unwrap();
 
         ShaderExpression::new(ShaderOperation::Mul(a, b))

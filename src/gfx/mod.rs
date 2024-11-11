@@ -1,9 +1,10 @@
 pub mod buffer;
 pub mod gfx_cache;
 pub mod input_layout;
-pub mod input_parameters;
 pub mod mesh;
 pub mod program;
+pub mod render_camera;
+pub mod render_parameters;
 pub mod shader;
 pub mod shader_gen;
 pub mod target_buffer;

@@ -6,7 +6,7 @@ use ggmath::prelude::*;
 use crate::app::app_prelude::ShaderParameters;
 
 use super::{
-    input_parameters::RenderParameters,
+    render_parameters::RenderParameters,
     shader::Shader,
     shader_gen::{shader_parameters::SHADER_UNIFORM_PREFIX, shader_type::ShaderType},
     texture::TextureView,
@@ -105,13 +105,13 @@ impl Program {
         &self.parameters
     }
 
-    /// Use the given input parameters
-    pub(crate) fn use_parameters(&self, input_parameters: &RenderParameters) -> Result<()> {
+    /// Use the given render parameters
+    pub(crate) fn use_parameters(&self, parameters: &RenderParameters) -> Result<()> {
         let expected_parameters = self.parameters();
         // Loop through the expected parameters
         for parameter in expected_parameters.iter() {
             // Get the corresponding input parameter value
-            let value = input_parameters
+            let value = parameters
                 .get(parameter.name())
                 .ok_or_else(|| anyhow::anyhow!("Expected input parameter {}", parameter.name()))?;
 

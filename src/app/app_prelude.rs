@@ -12,7 +12,7 @@ pub use crate::{
     geometry::shape::*,
     gfx::{
         gfx_cache::GfxCache,
-        input_parameters::RenderParameters,
+        render_parameters::RenderParameters,
         shader_gen::prelude::*,
         target_buffer::TargetBuffer,
         texture::{Texture, TextureRegion, TextureType, TextureView},
