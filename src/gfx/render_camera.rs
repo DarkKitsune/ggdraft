@@ -75,11 +75,11 @@ impl RenderCamera {
 
     /// Create a new orthographic camera facing the XY plane.
     /// The camera will be centered at the given position.
-    /// The near and far planes are calculated from the Z position and `z_range`.
+    /// The near and far planes are calculated from `z_range`.
     pub fn orthographic_centered(center: Vector3<f32>, z_range: f32) -> Self {
         // Calculate the near and far planes.
-        let near = center.z() - z_range / 2.0;
-        let far = center.z() + z_range / 2.0;
+        let near = -z_range / 2.0;
+        let far = z_range / 2.0;
 
         // Create the orientation.
         let orientation = Orientation::new(center, Quaternion::identity(), Vector::one());
