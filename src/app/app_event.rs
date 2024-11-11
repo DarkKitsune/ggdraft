@@ -78,7 +78,7 @@ pub fn init_render(
             // Get the vertex input position
             let position = inputs.get(VertexInput::Position)?;
 
-            // Get the view and projection matrices
+            // Get the view, projection, and model matrices
             let view_matrix = parameters.get_view_matrix();
             let projection_matrix = parameters.get_projection_matrix();
 

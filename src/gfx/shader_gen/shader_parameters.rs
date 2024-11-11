@@ -12,13 +12,13 @@ use super::{
 pub(crate) const SHADER_UNIFORM_PREFIX: &str = "_uniform_";
 
 /// The built-in view matrix parameter name in generated shaders.
-pub(crate) const PARAMETER_VIEW_MATRIX: &str = "parameter_view_matrix";
+pub(crate) const PARAMETER_VIEW_MATRIX: &str = "builtin_view_matrix";
 
 /// The built-in projection matrix parameter name in generated shaders.
-pub(crate) const PARAMETER_PROJECTION_MATRIX: &str = "parameter_projection_matrix";
+pub(crate) const PARAMETER_PROJECTION_MATRIX: &str = "builtin_projection_matrix";
 
 /// The built-in model matrix parameter name in generated shaders.
-pub(crate) const PARAMETER_MODEL_MATRIX: &str = "parameter_model_matrix";
+pub(crate) const PARAMETER_MODEL_MATRIX: &str = "builtin_model_matrix";
 
 /// Represents a single parameter for a shader.
 #[derive(Debug, Clone, PartialEq)]
