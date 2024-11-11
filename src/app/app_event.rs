@@ -98,7 +98,7 @@ pub fn init_render(
             // Output color = input color * texture color
             let input_color = inputs.get("color")?;
             let texture_color = color_view.sample(tex_coord, 0.0);
-            let output_color = input_color.mul(texture_color);
+            let output_color = input_color * texture_color;
             outputs.set_fragment_color(output_color);
 
             Ok(())

@@ -492,6 +492,55 @@ impl ShaderMath for ShaderExpression {}
 impl ShaderMath for f32 {}
 impl ShaderMath for i32 {}
 
+// Implement math operations for ShaderExpression.
+impl<T: Into<ShaderExpression>> std::ops::Add<T> for ShaderExpression {
+    type Output = ShaderExpression;
+
+    fn add(self, rhs: T) -> Self::Output {
+        ShaderMath::add(self, rhs)
+    }
+}
+
+impl<T: Into<ShaderExpression>> std::ops::Sub<T> for ShaderExpression {
+    type Output = ShaderExpression;
+
+    fn sub(self, rhs: T) -> Self::Output {
+        ShaderMath::sub(self, rhs)
+    }
+}
+
+impl<T: Into<ShaderExpression>> std::ops::Mul<T> for ShaderExpression {
+    type Output = ShaderExpression;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        ShaderMath::mul(self, rhs)
+    }
+}
+
+impl<T: Into<ShaderExpression>> std::ops::Div<T> for ShaderExpression {
+    type Output = ShaderExpression;
+
+    fn div(self, rhs: T) -> Self::Output {
+        ShaderMath::div(self, rhs)
+    }
+}
+
+impl<T: Into<ShaderExpression>> std::ops::Rem<T> for ShaderExpression {
+    type Output = ShaderExpression;
+
+    fn rem(self, rhs: T) -> Self::Output {
+        ShaderMath::rem(self, rhs)
+    }
+}
+
+impl std::ops::Neg for ShaderExpression {
+    type Output = ShaderExpression;
+
+    fn neg(self) -> Self::Output {
+        ShaderMath::neg(self)
+    }
+}
+
 pub trait ShaderVector: Into<ShaderExpression> + Sized {
     /// Returns the dot product of the two vectors.
     fn dot(self, other: impl Into<ShaderExpression>) -> ShaderExpression {
