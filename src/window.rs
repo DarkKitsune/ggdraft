@@ -1,7 +1,7 @@
 use ggmath::prelude::*;
 use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 
-use crate::gfx::Gfx;
+use crate::gfx::{self, Gfx};
 
 /// Create the window.
 pub(crate) fn create_window() -> (Glfw, PWindow, GlfwReceiver<(f64, WindowEvent)>) {
@@ -54,6 +54,10 @@ pub(crate) fn get_window_events(
 
             // Window resize event.
             WindowEvent::FramebufferSize(width, height) => {
+                unsafe {
+                    // Set the viewport to the new window size.
+                    gl::Viewport(0, 0, width, height);
+                }
                 window_events.push_resize(vector!(width as u32, height as u32));
             }
 

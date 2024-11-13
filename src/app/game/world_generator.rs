@@ -1,31 +1,32 @@
+use std::hash::{Hash, Hasher};
+
 use ggmath::prelude::*;
 
 use super::tile::Tile;
 
 /// The default number of noise samples to perform. Higher values result in more detailed noise
 /// at the cost of performance.
-pub const NOISE_DEFAULT_LEVELS: usize = 7;
+pub const NOISE_DEFAULT_LEVELS: usize = 4;
 /// The default scale of the noise. Higher values result in larger features.
 /// Higher values also require higher `NOISE_LEVELS` to maintain detail.
-pub const NOISE_DEFAULT_SCALE: f64 = 2.0;
+pub const NOISE_DEFAULT_SCALE: f64 = 4.0;
 /// The default smoothness of the noise.
-pub const NOISE_DEFAULT_SMOOTHNESS: f64 = 1.5;
+pub const NOISE_DEFAULT_SMOOTHNESS: f64 = 1.0;
 /// The default detail strength of the noise. Higher values result in stronger fine details.
-pub const NOISE_DETAIL_STRENGTH: f64 = 0.2;
+pub const NOISE_DETAIL_STRENGTH: f64 = 0.1;
 
 /// The maximum elevation of the world.
 /// This is the highest elevation that can be sampled from the elevation noise, in tiles.
-pub const MAX_ELEVATION: isize = 15;
+pub const MAX_ELEVATION: isize = 20;
 /// The minimum elevation of the world.
 /// This is the lowest elevation that can be sampled from the elevation noise, in tiles.
-pub const MIN_ELEVATION: isize = -10;
+pub const MIN_ELEVATION: isize = -15;
 /// The water level of the world.
 /// Terrain with an elevation below this level will be submerged in water.
 pub const WATER_LEVEL: isize = 0;
 
 /// The temperature at which water freezes.
 pub const FREEZING_TEMPERATURE: f32 = 0.3;
-
 
 /// Used to generate the game world.
 pub struct WorldGenerator {
@@ -59,7 +60,7 @@ impl WorldGenerator {
             NOISE_DEFAULT_SMOOTHNESS,
             NOISE_DETAIL_STRENGTH,
         );
-        
+
         Self {
             temperature_noise,
             humidity_noise,
@@ -70,16 +71,21 @@ impl WorldGenerator {
     /// Sample the climate at the given XYZ position.
     pub fn climate_at(&self, position: Vector3<isize>) -> GenClimate {
         let position = position.convert_to().unwrap();
-        let temperature = self.temperature_noise.sample_f64(position) as f32;
-        let humidity = self.humidity_noise.sample_f64(position) as f32;
-        GenClimate { temperature, humidity }
+        let temperature = self.temperature_noise.sample_f64(position + vector!(1234.0, 0.0, 0.0)) as f32;
+        let humidity = self.humidity_noise.sample_f64(position + vector!(3456.0, 0.0, 0.0)) as f32;
+        GenClimate {
+            temperature,
+            humidity,
+        }
     }
 
     /// Sample the elevation of the terrain surface at the given XZ position.
     /// Returns a value between 0.0 and 1.0.
     /// Higher values indicate higher elevation.
     pub fn elevation_at(&self, position: Vector2<isize>) -> isize {
-        let elevation_noise = self.elevation_noise.sample_f64(position.append(0).convert_to().unwrap());
+        let elevation_noise = self
+            .elevation_noise
+            .sample_f64(position.append(0).convert_to().unwrap() + vector!(5678.0, 0.0, 0.0));
         MIN_ELEVATION + (elevation_noise * (MAX_ELEVATION - MIN_ELEVATION) as f64) as isize
     }
 
@@ -90,7 +96,7 @@ impl WorldGenerator {
 
         // Calculate the surface depth
         let surface_depth = elevation - position.y();
-        
+
         // Calculate the water depth
         let water_depth = WATER_LEVEL - position.y();
 
@@ -106,15 +112,14 @@ impl WorldGenerator {
         WATER_LEVEL - position.y()
     }
 
-    /// Sample the tile at the given XYZ position.
+    /// Sample the tile at the given XYZ world position.
     pub fn sample_tile(&self, position: Vector3<isize>) -> Option<Tile> {
         // Create a TileRng for the tile
-        let seed = position.x() as u64 ^ position.y() as u64 ^ position.z() as u64;
-        let rng = TileRng::new(seed);
+        let rng = TileRng::new(position);
+
         // Sample the depth and climate at the position
         let climate = self.climate_at(position);
         let depth = self.depth_at(position);
-        
 
         // Generate the tile
         Tile::from_samples(rng, climate, depth)
@@ -212,7 +217,7 @@ impl GenClimate {
     pub fn base_biome(&self) -> BaseBiome {
         if self.temperature < FREEZING_TEMPERATURE {
             BaseBiome::Tundra
-        } else if self.humidity < 0.5 && self.temperature > 0.5 {
+        } else if self.humidity < 0.4 && self.temperature > 0.6 {
             BaseBiome::Desert
         } else {
             BaseBiome::Grassland
@@ -227,8 +232,11 @@ pub struct TileRng {
 }
 
 impl TileRng {
-    /// Create a new tile RNG with the given seed.
-    pub fn new(seed: u64) -> Self {
+    /// Create a new tile RNG using the hash of the given value as a seed.
+    pub fn new(world_tile_position: Vector3<isize>) -> Self {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        world_tile_position.hash(&mut hasher);
+        let seed = hasher.finish();
         Self {
             lcg: Lcg::new(seed),
         }

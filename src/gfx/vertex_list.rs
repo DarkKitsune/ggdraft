@@ -100,6 +100,11 @@ impl VertexList {
             }
         }
 
+        // Ensure that the inputs and indices are not empty.
+        if len == 0 || indices.is_empty() {
+            anyhow::bail!("Inputs and indices must not be empty.");
+        }
+
         // Allocate the data buffer.
         let mut data = vec![0f32; layout.component_stride() * len];
 

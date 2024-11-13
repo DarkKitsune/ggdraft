@@ -294,13 +294,19 @@ impl CacheRef for &CacheHandle {
 // Implement `CacheRef` for `String`.
 impl CacheRef for String {
     fn handle(self, cache: &GfxCache) -> CacheHandle {
-        cache.get_handle_of(&self).unwrap().clone()
+        cache
+            .get_handle_of(&self)
+            .unwrap_or_else(|| panic!("Cache does not contain an object with the name {:?}", self))
+            .clone()
     }
 }
 
 // Implement `CacheRef` for `&str`.
 impl CacheRef for &str {
     fn handle(self, cache: &GfxCache) -> CacheHandle {
-        cache.get_handle_of(self).unwrap().clone()
+        cache
+            .get_handle_of(self)
+            .unwrap_or_else(|| panic!("Cache does not contain an object with the name {:?}", self))
+            .clone()
     }
 }

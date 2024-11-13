@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use game::{chunk::CHUNK_SIZE, world::World, world_generator::WorldGenerator};
 
-use crate::gfx::render_camera::RenderCamera;
+use crate::{gfx::render_camera::RenderCamera, svector};
 
 use super::app_prelude::*;
 
@@ -57,11 +57,7 @@ pub fn init_render(
 ) -> AppEventResult<()> {
     // Create vertex layout describing the vertices going into the shader
     let vertex_layout = graphics_cache.create_vertex_layout(Some("vertex layout"), |layout| {
-        layout
-            .with_position()
-            .with_color()
-            .with_normal()
-            .with_tex_coord()
+        layout.with_position().with_color().with_normal()
     });
 
     // Create an input layout from the vertex layout
@@ -75,8 +71,10 @@ pub fn init_render(
         "input layout",
         // Vertex shader
         |inputs, parameters, outputs| {
-            // Get the vertex input position
+            // Get the vertex inputs
             let position = inputs.get(VertexInput::Position)?;
+            let color = inputs.get(VertexInput::Color)?;
+            let normal = inputs.get(VertexInput::Normal)?;
 
             // Get the view, projection, and model matrices
             let view_matrix = parameters.get_view_matrix();
@@ -89,76 +87,65 @@ pub fn init_render(
             outputs.set_vertex_position(screen_space);
 
             // Set the color to the input color, or white if no color is provided
-            outputs.set(
-                "color",
-                inputs.get(VertexInput::Color).unwrap_or(WHITE.into()),
-            )?;
+            outputs.set("color", color)?;
 
-            // Set the texture coordinates to the input texture coordinates
-            outputs.set("tex_coord", inputs.get(VertexInput::TexCoord)?)?;
+            // Set the normal to the input normal
+            outputs.set("normal", normal)?;
 
             Ok(())
         },
         // Fragment shader
-        |inputs, parameters, outputs| {
-            // Get the inputs
-            let input_tex_coord = inputs.get("tex_coord")?;
+        |inputs, _parameters, outputs| {
+            // Get the fragment inputs
             let input_color = inputs.get("color")?;
+            let input_normal = inputs.get("normal")?;
 
-            // Get the texture_color texture view
-            let color_view = parameters.get::<TextureView>("color_texture");
+            // Calculate basic lighting
+            let brightness = input_normal
+                .dot(vector!(1.0, 4.0, -2.0).normalized())
+                .max(0.0);
 
-            // Sample the texture color at the input texture coordinates
-            let texture_color = color_view.sample(input_tex_coord, 0.0);
-
-            // Fragment color = input color * texture color
-            let output_color = input_color * texture_color;
+            // Fragment color = input color * brightness
+            let output_color =
+                input_color * svector!(brightness.clone(), brightness.clone(), brightness, 1.0);
             outputs.set_fragment_color(output_color);
 
             Ok(())
         },
     )?;
 
-    // Create the texture.
-    let mut regions = HashMap::new();
-    regions.insert(
-        "Test".to_string(),
-        TextureRegion::new(vector!(0, 0), vector!(64, 64), 0, 1),
-    );
+    // Create a test world
+    let mut world = World::new(WorldGenerator::new(12345));
 
-    let texture_handle = graphics_cache.create_texture_from_file(
-        Some("texture"),
-        TextureType::Color,
-        "assets/texture.png",
-        Some(regions),
-    )?;
-    let texture = graphics_cache.get_texture(&texture_handle).unwrap();
-    let test_region = texture.region_view("Test").unwrap();
-
-    // Create the mesh
+    // Create the meshes
     graphics_cache.create_mesh(
-        Some("mesh"),
+        Some("mesh0"),
         &vertex_layout,
-        vec![
-            Rectangle::default()
-                .with_center(vector!(0.1, 0.2, 0.0))
-                .with_rotation(Quaternion::from_rotation_x(0.3) * Quaternion::from_rotation_y(0.2))
-                .with_size(vector!(1.1, 0.8))
-                .with_color(WHITE.lerp(&RED, 0.5)),
-            Rectangle::default()
-                .with_center(vector!(-0.5, -1.2, -1.2))
-                .with_rotation(Quaternion::from_rotation_y(0.5) * Quaternion::from_rotation_z(0.3))
-                .with_size(vector!(0.9, 1.3))
-                .with_color(WHITE.lerp(&GREEN, 0.5)),
-            Rectangle::default()
-                .with_center(vector!(1.3, -0.4, 0.4))
-                .with_rotation(Quaternion::from_rotation_z(0.7) * Quaternion::from_rotation_x(0.4))
-                .with_size(vector!(1.2, 2.7))
-                .with_color(WHITE.lerp(&BLUE, 0.5))
-                // Set the texture coordinates to the region "Test" of the texture
-                .with_texture_view_coords(&test_region),
-        ],
+        world.ensure_chunk(vector!(0, 0, 0)),
     );
+    graphics_cache.create_mesh(
+        Some("mesh1"),
+        &vertex_layout,
+        world.ensure_chunk(vector!(-1, 0, 0)),
+    );
+    graphics_cache.create_mesh(
+        Some("mesh2"),
+        &vertex_layout,
+        world.ensure_chunk(vector!(1, 0, 0)),
+    );
+    graphics_cache.create_mesh(
+        Some("mesh3"),
+        &vertex_layout,
+        world.ensure_chunk(vector!(0, 0, -1)),
+    );
+    graphics_cache.create_mesh(
+        Some("mesh4"),
+        &vertex_layout,
+        world.ensure_chunk(vector!(0, 0, 1)),
+    );
+
+
+    println!("Render initialized.");
 
     Ok(())
 }
@@ -179,32 +166,35 @@ pub fn render(
             .lerp(&WHITE, 0.25), // Mix 25% with white
     );
 
+    // Clear the framebuffer depth
+    framebuffer.clear_depth();
+
     // Retrieve the program and input layout
     let program = graphics_cache.get("program").unwrap();
     let input_layout = graphics_cache.get("input layout").unwrap();
 
     // Retrieve the mesh
-    let mesh = graphics_cache.get("mesh").unwrap();
-
-    // Retrieve a full view of the texture
-    let texture_view = graphics_cache.get_texture("texture").unwrap().full_view();
+    let mesh0 = graphics_cache.get("mesh0").unwrap();
+    let mesh1 = graphics_cache.get("mesh1").unwrap();
+    let mesh2 = graphics_cache.get("mesh2").unwrap();
+    let mesh3 = graphics_cache.get("mesh3").unwrap();
+    let mesh4 = graphics_cache.get("mesh4").unwrap();
 
     // Begin the parameters for rendering
     let mut parameters = RenderParameters::new();
 
-    // Set the texture view in color_texture
-    parameters.set("color_texture", texture_view);
-
     // Set the camera matrices
-    let target = Vector::zero();
-    let rotation = Quaternion::identity();
-    parameters.set_camera(
-        framebuffer_size.convert_to().unwrap(),
-        &RenderCamera::perspective_looking_at(target, rotation, 3.0, 90.0, 0.01, 100.0),
-    );
+    let target = vector!(CHUNK_SIZE as f32 / 2.0, 0.0, CHUNK_SIZE as f32 / 2.0);
+    let rotation = Quaternion::from_rotation_x(-0.5).and_then(&Quaternion::from_rotation_y(-0.7));
+    let camera = RenderCamera::perspective_looking_at(target, rotation, 40.0, 75.0, 0.01, 100.0);
+    parameters.set_camera(framebuffer_size.convert_to().unwrap(), &camera);
 
     // Draw the triangle
-    framebuffer.render_mesh(program, input_layout, &parameters, &mesh)?;
+    framebuffer.render_mesh(program, input_layout, &parameters, &mesh0)?;
+    framebuffer.render_mesh(program, input_layout, &parameters, &mesh1)?;
+    framebuffer.render_mesh(program, input_layout, &parameters, &mesh2)?;
+    framebuffer.render_mesh(program, input_layout, &parameters, &mesh3)?;
+    framebuffer.render_mesh(program, input_layout, &parameters, &mesh4)?;
 
     Ok(())
 }

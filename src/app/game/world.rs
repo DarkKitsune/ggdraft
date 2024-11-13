@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use ggmath::prelude::*;
 
-use super::{chunk::{Chunk, CHUNK_SIZE}, world_generator::WorldGenerator};
+use super::{
+    chunk::{Chunk, CHUNK_SIZE},
+    world_generator::WorldGenerator,
+};
 
 /// The game world.
 /// The world is made up of chunks.
@@ -36,7 +39,9 @@ impl World {
     /// If the chunk does not exist, it will be created.
     /// Returns a mutable reference to the chunk.
     pub fn ensure_chunk(&mut self, chunk_coord: Vector3<isize>) -> &mut Chunk {
-        self.chunks.entry(chunk_coord).or_insert_with(|| Chunk::generate(chunk_coord, &self.generator))
+        self.chunks
+            .entry(chunk_coord)
+            .or_insert_with(|| Chunk::generate(chunk_coord, &self.generator))
     }
 
     /// Remove a chunk from the world.
@@ -93,7 +98,9 @@ impl ChunkSpaceConversion for Vector3<f32> {
     }
 
     fn chunk_to_world(self, chunk_coord: Vector3<isize>) -> Self::ChunkToWorld {
-        self + (chunk_coord * CHUNK_SIZE as isize).convert_to::<f32>().unwrap()
+        self + (chunk_coord * CHUNK_SIZE as isize)
+            .convert_to::<f32>()
+            .unwrap()
     }
 }
 

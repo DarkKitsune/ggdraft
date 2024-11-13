@@ -54,18 +54,14 @@ impl Tile {
 
         match terrain_type {
             TerrainType::Air => None,
-            TerrainType::Water => {
-                match base_biome {
-                    BaseBiome::Tundra => Some(Self::new(TileType::Ice)),
-                    _ => Some(Self::new(TileType::Water)),
-                }
+            TerrainType::Water => match base_biome {
+                BaseBiome::Tundra => Some(Self::new(TileType::Ice)),
+                _ => Some(Self::new(TileType::Water)),
             },
-            TerrainType::Surface => {
-                match base_biome {
-                    BaseBiome::Grassland => Some(Self::new(TileType::Grass)),
-                    BaseBiome::Desert => Some(Self::new(TileType::Sand)),
-                    BaseBiome::Tundra => Some(Self::new(TileType::Snow)),
-                }
+            TerrainType::Surface => match base_biome {
+                BaseBiome::Grassland => Some(Self::new(TileType::Grass)),
+                BaseBiome::Desert => Some(Self::new(TileType::Sand)),
+                BaseBiome::Tundra => Some(Self::new(TileType::Snow)),
             },
             TerrainType::Underground => {
                 // Create a rock tile with a 1 in 4 chance.
@@ -74,7 +70,7 @@ impl Tile {
                 } else {
                     Some(Self::new(TileType::Dirt))
                 }
-            },
+            }
         }
     }
 
@@ -84,8 +80,18 @@ impl Tile {
     }
 
     /// Generate vertices for the tile.
-    pub fn generate_vertices(&self, position_in_chunk: Vector3<usize>, visible_from: &TileVisibility, positions: &mut Vec<Vector3<f32>>, normals: &mut Vec<Vector3<f32>>, colors: &mut Vec<Vector4<f32>>, indices: &mut Vec<u32>, current_index: &mut u32) {
-        let base_position = position_in_chunk.convert_to::<f32>().unwrap();
+    pub fn generate_vertices(
+        &self,
+        chunk_world_position: Vector3<f32>,
+        position_in_chunk: Vector3<usize>,
+        visible_from: &TileVisibility,
+        positions: &mut Vec<Vector3<f32>>,
+        normals: &mut Vec<Vector3<f32>>,
+        colors: &mut Vec<Vector4<f32>>,
+        indices: &mut Vec<u32>,
+        current_index: &mut u32,
+    ) {
+        let base_position = chunk_world_position + position_in_chunk.convert_to::<f32>().unwrap();
         let color = self.color();
 
         // Negative X face.

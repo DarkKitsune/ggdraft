@@ -42,6 +42,21 @@ impl TargetBuffer {
         }
     }
 
+    /// Clear the buffer depth.
+    pub fn clear_depth(&self) {
+        unsafe {
+            // Bind the buffer.
+            gl::BindFramebuffer(gl::FRAMEBUFFER, self.handle);
+
+            // Clear the buffer.
+            gl::ClearDepth(1.0);
+            gl::Clear(gl::DEPTH_BUFFER_BIT);
+
+            // Unbind the buffer.
+            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
+        }
+    }
+
     /// Render a mesh to this buffer.
     pub fn render_mesh(
         &self,

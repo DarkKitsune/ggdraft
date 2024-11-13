@@ -132,6 +132,12 @@ impl Gfx {
                 );
             }
 
+            // Enable depth testing and face culling.
+            unsafe {
+                gl::Enable(gl::DEPTH_TEST);
+                gl::Enable(gl::CULL_FACE);
+            }
+
             // Initialize the graphics controller.
             gfx.set(Some(Gfx));
         });

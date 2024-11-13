@@ -9,6 +9,7 @@ use super::{
 };
 
 /// Represents a shader operation within a shader expression.
+#[derive(Debug, Clone)]
 pub enum ShaderOperation {
     Input(String, ShaderType),
     Uniform(String, ShaderType),
@@ -47,6 +48,7 @@ pub enum ShaderOperation {
 }
 
 /// Represents a shader expression.
+#[derive(Debug, Clone)]
 pub struct ShaderExpression {
     operation: Box<RefCell<ShaderOperation>>,
 }
@@ -610,6 +612,84 @@ pub trait ShaderVector: Into<ShaderExpression> + Sized {
 
         ShaderExpression::new(ShaderOperation::Normalized(a))
     }
+
+    /// Creates a new Vector2 expression.
+    fn vec2(a: impl Into<ShaderExpression>, b: impl Into<ShaderExpression>) -> ShaderExpression {
+        let a = a.into();
+        let b = b.into();
+
+        // Ensure the types are valid for creating a Vector2.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        a_type.ensure_scalar("argument 'a' of 'vec2'").unwrap();
+        b_type.ensure_scalar("argument 'b' of 'vec2'").unwrap();
+        a_type
+            .ensure_matches(b_type, "arguments 'a' and 'b' of 'vec2'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Vec2(a, b))
+    }
+
+    /// Creates a new Vector3 expression.
+    fn vec3(
+        a: impl Into<ShaderExpression>,
+        b: impl Into<ShaderExpression>,
+        c: impl Into<ShaderExpression>,
+    ) -> ShaderExpression {
+        let a = a.into();
+        let b = b.into();
+        let c = c.into();
+
+        // Ensure the types are valid for creating a Vector3.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        let c_type = c.shader_type().unwrap();
+        a_type.ensure_scalar("argument 'a' of 'vec3'").unwrap();
+        b_type.ensure_scalar("argument 'b' of 'vec3'").unwrap();
+        c_type.ensure_scalar("argument 'c' of 'vec3'").unwrap();
+        a_type
+            .ensure_matches(b_type, "arguments 'a' and 'b' of 'vec3'")
+            .unwrap();
+        a_type
+            .ensure_matches(c_type, "arguments 'a' and 'c' of 'vec3'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Vec3(a, b, c))
+    }
+
+    /// Creates a new Vector4 expression.
+    fn vec4(
+        a: impl Into<ShaderExpression>,
+        b: impl Into<ShaderExpression>,
+        c: impl Into<ShaderExpression>,
+        d: impl Into<ShaderExpression>,
+    ) -> ShaderExpression {
+        let a = a.into();
+        let b = b.into();
+        let c = c.into();
+        let d = d.into();
+
+        // Ensure the types are valid for creating a Vector3.
+        let a_type = a.shader_type().unwrap();
+        let b_type = b.shader_type().unwrap();
+        let c_type = c.shader_type().unwrap();
+        let d_type = d.shader_type().unwrap();
+        a_type.ensure_scalar("argument 'a' of 'vec4'").unwrap();
+        b_type.ensure_scalar("argument 'b' of 'vec4'").unwrap();
+        c_type.ensure_scalar("argument 'c' of 'vec4'").unwrap();
+        d_type.ensure_scalar("argument 'd' of 'vec4'").unwrap();
+        a_type
+            .ensure_matches(b_type, "arguments 'a' and 'b' of 'vec4'")
+            .unwrap();
+        a_type
+            .ensure_matches(c_type, "arguments 'a' and 'c' of 'vec4'")
+            .unwrap();
+        a_type
+            .ensure_matches(d_type, "arguments 'a' and 'd' of 'vec4'")
+            .unwrap();
+
+        ShaderExpression::new(ShaderOperation::Vec4(a, b, c, d))
+    }
 }
 
 impl ShaderVector for ShaderExpression {}
@@ -707,4 +787,30 @@ impl Display for ShaderExpression {
             }
         }
     }
+}
+
+/// Macro for easily making vectors in a shader expression.
+#[macro_export]
+macro_rules! svector {
+    ($a:expr; 2) => {{
+        let a = $a;
+        $crate::gfx::shader_gen::prelude::ShaderExpression::vec2(a.clone(), a)
+    }};
+    ($a:expr; 3) => {{
+        let a = $a;
+        $crate::gfx::shader_gen::prelude::ShaderExpression::vec3(a.clone(), a.clone(), a)
+    }};
+    ($a:expr; 4) => {{
+        let a = $a;
+        $crate::gfx::shader_gen::prelude::ShaderExpression::vec4(a.clone(), a.clone(), a.clone(), a)
+    }};
+    ($a:expr, $b:expr) => {
+        $crate::gfx::shader_gen::prelude::ShaderExpression::vec2($a, $b)
+    };
+    ($a:expr, $b:expr, $c:expr) => {
+        $crate::gfx::shader_gen::prelude::ShaderExpression::vec3($a, $b, $c)
+    };
+    ($a:expr, $b:expr, $c:expr, $d:expr) => {
+        $crate::gfx::shader_gen::prelude::ShaderExpression::vec4($a, $b, $c, $d)
+    };
 }
