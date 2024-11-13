@@ -39,8 +39,8 @@ pub fn pre_think(
     Ok(())
 }
 
-// Called after the engine thinks
-pub fn post_think(
+// Called when the engine thinks
+pub fn think(
     _engine: &mut Engine,
     _universe: &mut Universe,
     _async_data: AppData<AsyncData>,

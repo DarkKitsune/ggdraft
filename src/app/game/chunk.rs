@@ -1,7 +1,11 @@
+use std::rc::Rc;
+
 use anyhow::{anyhow, Result};
 use ggmath::{init_array, prelude::*};
 
-use super::tile::Tile;
+use crate::gfx::{vertex_layout::VertexLayout, vertex_list::{VertexList, VertexListInput}};
+
+use super::{tile::{Tile, TileVisibility}, world::{ChunkSpaceConversion, WorldSpaceConversion}, world_generator::WorldGenerator};
 
 /// The size of a chunk in the world.
 /// This is the number of tiles in each dimension of a chunk.
@@ -18,85 +22,178 @@ const CHUNK_STEP_Z: usize = CHUNK_SIZE * CHUNK_SIZE;
 
 /// A chunk in the world.
 pub struct Chunk {
+    /// The coordinates of the chunk in the world.
+    coord: Vector3<isize>,
+    /// The tiles in the chunk.
     tiles: [Option<Tile>; CHUNK_VOLUME],
 }
 
 impl Chunk {
-    /// Create a new chunk
-    pub const fn new() -> Self {
-        Self {
-            tiles: Self::__init_none_array(),
-        }
-    }
+    /// Generate a new chunk using the given `WorldGenerator`.
+    pub fn generate(coord: Vector3<isize>, generator: &WorldGenerator) -> Self {
+        // Initialize the array with tiles sampled from the generator.
+        let mut x = 0;
+        let mut y = 0;
+        let mut z = 0;
+        let tiles = init_array!(
+            [Option<Tile>; CHUNK_VOLUME],
+            mut |_| {
+                // Sample the tile at the current position from the generator.
+                let tile = generator.sample_tile(vector!(x, y, z).chunk_to_world(coord));
 
-    // Helper functions for generating a const array of None
-    const fn __init_none_array() -> [Option<Tile>; CHUNK_VOLUME] {
-        init_array!([Option<Tile>; CHUNK_VOLUME], (), const Self::__init_none_array_idx)
-    }
-
-    const fn __init_none_array_idx(_idx: usize) -> Option<Tile> {
-        None
-    }
-
-    // Create a new chunk with the given tiles
-    pub const fn with_tiles(tiles: [Option<Tile>; CHUNK_VOLUME]) -> Self {
-        Self { tiles }
-    }
-
-    /// Create a new chunk with tiles returned by the given function
-    pub fn with_tiles_fn<F>(f: impl Fn(usize, usize, usize) -> Tile) -> Self {
-        // Start with an array of None
-        let mut tiles = Self::__init_none_array();
-
-        // Fill the array with the tiles returned by the function
-        for x in 0..CHUNK_SIZE {
-            for y in 0..CHUNK_SIZE {
-                for z in 0..CHUNK_SIZE {
-                    tiles[x + y * CHUNK_STEP_Y + z * CHUNK_STEP_Z] = Some(f(x, y, z));
+                // Increment the position.
+                x += 1;
+                if x >= CHUNK_SIZE as isize {
+                    x = 0;
+                    y += 1;
+                    if y >= CHUNK_SIZE as isize {
+                        y = 0;
+                        z += 1;
+                    }
                 }
-            }
-        }
 
-        Self { tiles }
+                tile
+            }
+        );
+
+        Self { coord, tiles }
     }
 
-    /// Get the tile at the given in-chunk position
-    /// Returns None if the tile is empty or the position is out of bounds
-    pub fn get_tile(&self, in_chunk_position: Vector3<usize>) -> Option<&Tile> {
-        // Calculate the index of the tile in the chunk's tile array
-        let idx = in_chunk_position.x()
+    /// Convert an in-chunk tile position to an index in the chunk's tile array.
+    fn pos_to_index(in_chunk_position: Vector3<usize>) -> usize {
+        in_chunk_position.x()
             + in_chunk_position.y() * CHUNK_STEP_Y
-            + in_chunk_position.z() * CHUNK_STEP_Z;
+            + in_chunk_position.z() * CHUNK_STEP_Z
+    }
 
-        // Get the tile at the index
+    /// Get the tile at the given in-chunk tile position.
+    /// Returns None if the tile is empty or the position is out of bounds.
+    pub fn get_tile(&self, in_chunk_position: Vector3<usize>) -> Option<&Tile> {
+        // Calculate the index of the tile in the chunk's tile array.
+        let idx = Self::pos_to_index(in_chunk_position);
+
+        // Get the tile at the index.
         self.tiles.get(idx)?.as_ref()
     }
 
-    /// Get the mutable tile at the given in-chunk position
-    /// Returns None if the tile is empty or the position is out of bounds
+    /// Get the mutable tile at the given in-chunk tile position.
+    /// Returns None if the tile is empty or the position is out of bounds.
     pub fn get_tile_mut(&mut self, in_chunk_position: Vector3<usize>) -> Option<&mut Tile> {
-        // Calculate the index of the tile in the chunk's tile array
-        let idx = in_chunk_position.x()
-            + in_chunk_position.y() * CHUNK_STEP_Y
-            + in_chunk_position.z() * CHUNK_STEP_Z;
+        // Calculate the index of the tile in the chunk's tile array.
+        let idx = Self::pos_to_index(in_chunk_position);
 
-        // Get the tile at the index
+        // Get the tile at the index.
         self.tiles.get_mut(idx)?.as_mut()
     }
 
-    /// Set the tile at the given in-chunk position
-    /// Returns an error if the position is out of bounds
+    /// Set the tile at the given in-chunk tile position.
+    /// Returns an error if the position is out of bounds.
     pub fn set_tile(&mut self, in_chunk_position: Vector3<usize>, tile: Tile) -> Result<()> {
-        // Calculate the index of the tile in the chunk's tile array
+        // Calculate the index of the tile in the chunk's tile array.
         let idx = in_chunk_position.x()
             + in_chunk_position.y() * CHUNK_STEP_Y
             + in_chunk_position.z() * CHUNK_STEP_Z;
 
-        // Replace the tile at the index in the chunk's tile array if it exists, otherwise return an error
+        // Replace the tile at the index in the chunk's tile array if it exists, otherwise return an error.
         self.tiles
             .get_mut(idx)
             .ok_or_else(|| anyhow!("Position out of bounds: {:?}", in_chunk_position))?
             .replace(tile);
         Ok(())
     }
+
+    /// Get the coordinates of the chunk in the world.
+    pub const fn coordinates(&self) -> Vector3<isize> {
+        self.coord
+    }
+
+    /// Convert a world-space position to a position local to this chunk.
+    /// Returns None if the position is out of bounds of the chunk.
+    pub fn world_to_local(&self, world_position: Vector3<f32>) -> Option<Vector3<f32>> {
+        // Calculate the position of the tile in the chunk.
+        let in_chunk_position = world_position.world_to_chunk();
+        // Check if the position is out of bounds.
+        if in_chunk_position.x() >= CHUNK_SIZE as f32
+            || in_chunk_position.y() >= CHUNK_SIZE as f32
+            || in_chunk_position.z() >= CHUNK_SIZE as f32
+        {
+            None
+        } else {
+            Some(in_chunk_position)
+        }
+    }
+
+    /// Convert a local position to a world-space position.
+    pub fn local_to_world(&self, local_position: Vector3<f32>) -> Vector3<f32> {
+        // Calculate the position of the tile in the world.
+        local_position.chunk_to_world(self.coord)
+    }
+
+    /// Generate a `VertexList` for rendering the chunk.
+    pub fn to_vertices(&self, layout: Rc<VertexLayout>) -> Result<VertexList> {
+        let mut positions = Vec::new();
+        let mut normals = Vec::new();
+        let mut colors = Vec::new();
+        let mut indices = Vec::new();
+
+        let mut current_index = 0;
+        let mut x = 0;
+        let mut y = 0;
+        let mut z = 0;
+        // Keeps track of whether the previous tile was None, since it is always
+        // in the negative X direction unless we have stepped in the Y direction.
+        let mut nx_none = true;
+        
+        // Iterate over every tile in the chunk, generating vertices and indices.
+        for (tile_idx, tile) in self.tiles.iter().enumerate() {
+            // Only output vertices and indices if the tile is not None.
+            if let Some(tile) = tile {
+                // First check which faces are visible by checking the surrounding tiles.
+                // We already know whether the negative X direction is None.
+                // Check the tile in the positive X direction.
+                let px_none = self.tiles.get(tile_idx + 1).unwrap_or(&None).is_none();
+                // Check the tile in the negative Y direction.
+                let ny_none = self.tiles.get(tile_idx - CHUNK_SIZE).unwrap_or(&None).is_none();
+                // Check the tile in the positive Y direction.
+                let py_none = self.tiles.get(tile_idx + CHUNK_SIZE).unwrap_or(&None).is_none();
+                // Check the tile in the negative Z direction.
+                let nz_none = self.tiles.get(tile_idx - CHUNK_STEP_Z).unwrap_or(&None).is_none();
+                // Check the tile in the positive Z direction.
+                let pz_none = self.tiles.get(tile_idx + CHUNK_STEP_Z).unwrap_or(&None).is_none();
+                // Create the TileVisibility object.
+                let tile_visibility = TileVisibility::new(nx_none, px_none, ny_none, py_none, nz_none, pz_none);
+
+                tile.generate_vertices(vector!(x, y, z), &tile_visibility, &mut positions, &mut normals, &mut colors, &mut indices, &mut current_index);
+            }
+
+            // Increment the position.
+            x += 1;
+            if x >= CHUNK_SIZE {
+                x = 0;
+                y += 1;
+                if y >= CHUNK_SIZE {
+                    y = 0;
+                    z += 1;
+                }
+                
+                // If we have stepped in the Y direction, then reset nx_none.
+                nx_none = true;
+            }
+            else {
+                // If we have not stepped in the Y direction, then update nx_none.
+                nx_none = tile.is_none();
+            }
+        }
+
+        VertexList::new(
+            layout,
+            &[
+                VertexListInput::Position(&positions),
+                VertexListInput::Normal(&normals),
+                VertexListInput::Color(&colors),
+            ],
+            indices,
+        )
+    }
 }
+

@@ -116,7 +116,7 @@ impl RenderCamera {
 
     /// Get the current near and far planes of the camera.
     /// This takes into account the scale of the camera's orientation.
-    pub const fn current_near_far(&self) -> (f32, f32) {
+    pub fn current_near_far(&self) -> (f32, f32) {
         let average_scale = self.orientation.average_scale();
 
         (self.near * average_scale, self.far * average_scale)

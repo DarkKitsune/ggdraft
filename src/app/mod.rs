@@ -93,7 +93,7 @@ pub async fn run() -> Result<()> {
         // Run app pre-think event.
         app_event::pre_think(&mut engine, &mut universe, async_data.clone())?;
 
-        // Let the engine think by running the app modules once.
+        // Let the engine internals think by running the app modules once.
         // app.run().await?;
 
         // End the loop if the window is closed.
@@ -102,8 +102,8 @@ pub async fn run() -> Result<()> {
             break;
         }
 
-        // Run app post-think event.
-        app_event::post_think(&mut engine, &mut universe, async_data.clone())?;
+        // Run app think event.
+        app_event::think(&mut engine, &mut universe, async_data.clone())?;
 
         // Run app render event.
         Gfx::get().use_cache_mut(|cache| {
