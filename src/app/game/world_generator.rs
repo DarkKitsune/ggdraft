@@ -71,8 +71,12 @@ impl WorldGenerator {
     /// Sample the climate at the given XZ position.
     pub fn climate_at(&self, position: Vector2<isize>) -> GenClimate {
         let position = position.convert_to().unwrap();
-        let temperature = self.temperature_noise.sample_f64(position + vector!(1234.0, 0.0)) as f32;
-        let humidity = self.humidity_noise.sample_f64(position + vector!(3456.0, 0.0)) as f32;
+        let temperature = self
+            .temperature_noise
+            .sample_f64(position + vector!(1234.0, 0.0)) as f32;
+        let humidity = self
+            .humidity_noise
+            .sample_f64(position + vector!(3456.0, 0.0)) as f32;
         GenClimate {
             temperature,
             humidity,

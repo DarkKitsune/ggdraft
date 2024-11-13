@@ -308,21 +308,9 @@ impl UniformDefault for f32 {
     }
 }
 
-impl UniformDefault for Vector2<f32> {
+impl<const N: usize> UniformDefault for Vector<f32, N> {
     fn default_value() -> Self {
-        vector!(0.0, 0.0)
-    }
-}
-
-impl UniformDefault for Vector3<f32> {
-    fn default_value() -> Self {
-        vector!(0.0, 0.0, 0.0)
-    }
-}
-
-impl UniformDefault for Vector4<f32> {
-    fn default_value() -> Self {
-        vector!(0.0, 0.0, 0.0, 0.0)
+        Vector::zero()
     }
 }
 

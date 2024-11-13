@@ -144,7 +144,6 @@ pub fn init_render(
         world.ensure_chunk(vector!(0, 0, 1)),
     );
 
-
     println!("Render initialized.");
 
     Ok(())

@@ -192,8 +192,8 @@ impl Rectangle {
         Self {
             orientation: Orientation::new(center, rotation, vector!(size.x(), size.y(), 1.0)),
             color,
-            tex_coord_min: vector!(0.0, 0.0),
-            tex_coord_max: vector!(1.0, 1.0),
+            tex_coord_min: vector!(0.0; 2),
+            tex_coord_max: vector!(1.0; 2),
         }
     }
 
@@ -203,8 +203,8 @@ impl Rectangle {
         Self {
             orientation,
             color,
-            tex_coord_min: vector!(0.0, 0.0),
-            tex_coord_max: vector!(1.0, 1.0),
+            tex_coord_min: vector!(0.0; 2),
+            tex_coord_max: vector!(1.0; 2),
         }
     }
 

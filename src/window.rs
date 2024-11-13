@@ -1,7 +1,7 @@
 use ggmath::prelude::*;
 use glfw::{Action, Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 
-use crate::gfx::{self, Gfx};
+use crate::gfx::Gfx;
 
 /// Create the window.
 pub(crate) fn create_window() -> (Glfw, PWindow, GlfwReceiver<(f64, WindowEvent)>) {

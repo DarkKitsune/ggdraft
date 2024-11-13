@@ -70,7 +70,11 @@ impl Chunk {
             }
         );
 
-        Self { coord, tiles, empty }
+        Self {
+            coord,
+            tiles,
+            empty,
+        }
     }
 
     /// Convert an in-chunk tile position to an index in the chunk's tile array.

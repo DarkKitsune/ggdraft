@@ -153,8 +153,8 @@ impl Texture {
         TextureView {
             texture_handle: self.handle,
             texture_type: self.texture_type,
-            min: vector!(0.0, 0.0, 0.0),
-            max: vector!(1.0, 1.0, 1.0),
+            min: Vector::zero(),
+            max: Vector::one(),
         }
     }
 
@@ -368,8 +368,8 @@ impl Default for TextureView {
         Self {
             texture_handle: 0,
             texture_type: TextureType::Invalid,
-            min: vector!(0.0, 0.0, 0.0),
-            max: vector!(1.0, 1.0, 1.0),
+            min: Vector::zero(),
+            max: Vector::one(),
         }
     }
 }
