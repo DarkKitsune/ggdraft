@@ -30,30 +30,30 @@ pub const FREEZING_TEMPERATURE: f32 = 0.3;
 
 /// Used to generate the game world.
 pub struct WorldGenerator {
-    temperature_noise: Noise<3>,
-    humidity_noise: Noise<3>,
-    elevation_noise: Noise<3>,
+    temperature_noise: Noise<2>,
+    humidity_noise: Noise<2>,
+    elevation_noise: Noise<2>,
 }
 
 impl WorldGenerator {
     /// Create a new world generator with the given seed.
     pub fn new(seed: u64) -> Self {
         // Create noise generators
-        let temperature_noise = Noise::<3>::new(
+        let temperature_noise = Noise::new(
             seed,
             NOISE_DEFAULT_LEVELS,
             NOISE_DEFAULT_SCALE,
             NOISE_DEFAULT_SMOOTHNESS,
             NOISE_DETAIL_STRENGTH,
         );
-        let humidity_noise = Noise::<3>::new(
+        let humidity_noise = Noise::new(
             seed ^ 12345,
             NOISE_DEFAULT_LEVELS,
             NOISE_DEFAULT_SCALE,
             NOISE_DEFAULT_SMOOTHNESS,
             NOISE_DETAIL_STRENGTH,
         );
-        let elevation_noise = Noise::<3>::new(
+        let elevation_noise = Noise::new(
             seed ^ 23456,
             NOISE_DEFAULT_LEVELS,
             NOISE_DEFAULT_SCALE,
@@ -68,11 +68,11 @@ impl WorldGenerator {
         }
     }
 
-    /// Sample the climate at the given XYZ position.
-    pub fn climate_at(&self, position: Vector3<isize>) -> GenClimate {
+    /// Sample the climate at the given XZ position.
+    pub fn climate_at(&self, position: Vector2<isize>) -> GenClimate {
         let position = position.convert_to().unwrap();
-        let temperature = self.temperature_noise.sample_f64(position + vector!(1234.0, 0.0, 0.0)) as f32;
-        let humidity = self.humidity_noise.sample_f64(position + vector!(3456.0, 0.0, 0.0)) as f32;
+        let temperature = self.temperature_noise.sample_f64(position + vector!(1234.0, 0.0)) as f32;
+        let humidity = self.humidity_noise.sample_f64(position + vector!(3456.0, 0.0)) as f32;
         GenClimate {
             temperature,
             humidity,
@@ -85,7 +85,7 @@ impl WorldGenerator {
     pub fn elevation_at(&self, position: Vector2<isize>) -> isize {
         let elevation_noise = self
             .elevation_noise
-            .sample_f64(position.append(0).convert_to().unwrap() + vector!(5678.0, 0.0, 0.0));
+            .sample_f64(position.convert_to().unwrap() + vector!(5678.0, 0.0));
         MIN_ELEVATION + (elevation_noise * (MAX_ELEVATION - MIN_ELEVATION) as f64) as isize
     }
 
@@ -118,7 +118,7 @@ impl WorldGenerator {
         let rng = TileRng::new(position);
 
         // Sample the depth and climate at the position
-        let climate = self.climate_at(position);
+        let climate = self.climate_at(position.xz());
         let depth = self.depth_at(position);
 
         // Generate the tile
