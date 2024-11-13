@@ -184,14 +184,14 @@ impl Chunk {
                 let ny_none = y == 0
                     || self
                         .tiles
-                        .get(tile_idx - CHUNK_SIZE)
+                        .get(tile_idx - CHUNK_STEP_Y)
                         .unwrap_or(&None)
                         .is_none();
                 // Check the tile in the positive Y direction.
                 let py_none = y == CHUNK_SIZE - 1
                     || self
                         .tiles
-                        .get(tile_idx + CHUNK_SIZE)
+                        .get(tile_idx + CHUNK_STEP_Y)
                         .unwrap_or(&None)
                         .is_none();
                 // Check the tile in the negative Z direction.
