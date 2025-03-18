@@ -6,6 +6,7 @@ use ggmath::prelude::*;
 use crate::{
     color,
     gfx::{
+        gfx_cache::GfxCache,
         texture::TextureView,
         vertex_layout::VertexLayout,
         vertex_list::{VertexList, VertexListInput},
@@ -85,14 +86,14 @@ impl ShapeTriangles {
 
     /// Creates an empty `ShapeTriangles`.
     /// This is useful for appending shapes.
-    pub const fn empty() -> Result<Self> {
-        Ok(Self {
+    pub const fn empty() -> Self {
+        Self {
             positions: Vec::new(),
             normals: Vec::new(),
             colors: Vec::new(),
             tex_coords: Vec::new(),
             indices: Vec::new(),
-        })
+        }
     }
 
     /// Appends the triangles from another shape to this shape.
@@ -149,7 +150,7 @@ impl ShapeTriangles {
 /// A trait for shapes that can be converted to a list of triangle vertices.
 pub trait ShapeToTriangles {
     /// Converts the shape to a list of triangle vertices.
-    fn to_triangles(&self) -> ShapeTriangles;
+    fn to_triangles(&self, cache: &GfxCache) -> ShapeTriangles;
 }
 
 // Implement ShapeToTriangles for Vec<T> where T: ShapeToTriangles.
@@ -157,11 +158,11 @@ impl<T> ShapeToTriangles for Vec<T>
 where
     T: ShapeToTriangles,
 {
-    fn to_triangles(&self) -> ShapeTriangles {
-        let mut triangles = ShapeTriangles::empty().unwrap();
+    fn to_triangles(&self, cache: &GfxCache) -> ShapeTriangles {
+        let mut triangles = ShapeTriangles::empty();
 
         for shape in self {
-            let mut shape_triangles = shape.to_triangles();
+            let mut shape_triangles = shape.to_triangles(cache);
             triangles.append(&mut shape_triangles);
         }
 
@@ -277,19 +278,16 @@ impl HasOrientation for Rectangle {
 }
 
 impl ShapeToTriangles for Rectangle {
-    fn to_triangles(&self) -> ShapeTriangles {
-        // Calculate the half size.
-        let half_size = self.scale() / 2.0;
-
+    fn to_triangles(&self, _cache: &GfxCache) -> ShapeTriangles {
         // Get the transform matrix.
         let matrix = self.get_transform();
 
         // Calculate the positions.
         let positions = vec![
-            (matrix * vector!(-half_size.x(), -half_size.y(), 0.0, 1.0)).xyz(),
-            (matrix * vector!(half_size.x(), -half_size.y(), 0.0, 1.0)).xyz(),
-            (matrix * vector!(half_size.x(), half_size.y(), 0.0, 1.0)).xyz(),
-            (matrix * vector!(-half_size.x(), half_size.y(), 0.0, 1.0)).xyz(),
+            (matrix * vector!(-0.5, -0.5, 0.0, 1.0)).xyz(),
+            (matrix * vector!(0.5, -0.5, 0.0, 1.0)).xyz(),
+            (matrix * vector!(0.5, 0.5, 0.0, 1.0)).xyz(),
+            (matrix * vector!(-0.5, 0.5, 0.0, 1.0)).xyz(),
         ];
 
         // Calculate the normals and colors.

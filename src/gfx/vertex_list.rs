@@ -6,7 +6,10 @@ use ggutil::prelude::MaybeOwned;
 
 use crate::geometry::shape::ShapeToTriangles;
 
-use super::vertex_layout::{VertexComponent, VertexInput, VertexLayout};
+use super::{
+    gfx_cache::GfxCache,
+    vertex_layout::{VertexComponent, VertexInput, VertexLayout},
+};
 
 /// Represents an input for vertices going into a VertexList.
 #[derive(Debug, Clone, PartialEq)]
@@ -132,8 +135,12 @@ impl VertexList {
     }
 
     /// Create a new vertex list from the given shape.
-    pub fn from_shape(layout: Rc<VertexLayout>, shape: &impl ShapeToTriangles) -> Result<Self> {
-        shape.to_triangles().into_vertex_list(layout)
+    pub fn from_shape(
+        cache: &GfxCache,
+        layout: Rc<VertexLayout>,
+        shape: &impl ShapeToTriangles,
+    ) -> Result<Self> {
+        shape.to_triangles(cache).into_vertex_list(layout)
     }
 
     /// Get the vertex data within the vertex list.
@@ -155,29 +162,49 @@ impl VertexList {
 /// Trait for types that can be converted into a `VertexList`.
 pub trait IntoVertexList<'a> {
     /// Convert the type into a `VertexList`.
-    fn into_vertex_list(self, layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList>;
+    fn into_vertex_list(
+        self,
+        cache: &GfxCache,
+        layout: Rc<VertexLayout>,
+    ) -> MaybeOwned<'a, VertexList>;
 }
 
 impl<'a> IntoVertexList<'a> for VertexList {
-    fn into_vertex_list(self, _layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList> {
+    fn into_vertex_list(
+        self,
+        _cache: &GfxCache,
+        _layout: Rc<VertexLayout>,
+    ) -> MaybeOwned<'a, VertexList> {
         MaybeOwned::Owned(self)
     }
 }
 
 impl<'a> IntoVertexList<'a> for &'a VertexList {
-    fn into_vertex_list(self, _layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList> {
+    fn into_vertex_list(
+        self,
+        _cache: &GfxCache,
+        _layout: Rc<VertexLayout>,
+    ) -> MaybeOwned<'a, VertexList> {
         MaybeOwned::Borrowed(self)
     }
 }
 
 impl<'a, T: ShapeToTriangles> IntoVertexList<'a> for &'a T {
-    fn into_vertex_list(self, layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList> {
-        MaybeOwned::Owned(VertexList::from_shape(layout, self).unwrap())
+    fn into_vertex_list(
+        self,
+        cache: &GfxCache,
+        layout: Rc<VertexLayout>,
+    ) -> MaybeOwned<'a, VertexList> {
+        MaybeOwned::Owned(VertexList::from_shape(cache, layout, self).unwrap())
     }
 }
 
 impl<'a, T: ShapeToTriangles> IntoVertexList<'a> for Vec<T> {
-    fn into_vertex_list(self, layout: Rc<VertexLayout>) -> MaybeOwned<'a, VertexList> {
-        MaybeOwned::Owned(VertexList::from_shape(layout, &self).unwrap())
+    fn into_vertex_list(
+        self,
+        cache: &GfxCache,
+        layout: Rc<VertexLayout>,
+    ) -> MaybeOwned<'a, VertexList> {
+        MaybeOwned::Owned(VertexList::from_shape(cache, layout, &self).unwrap())
     }
 }

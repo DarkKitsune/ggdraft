@@ -12,7 +12,7 @@ use super::{
     program::Program,
     shader::{Shader, ShaderStage},
     shader_gen::{shader_inputs::ShaderInputs, shader_outputs::ShaderOutputs},
-    texture::{Texture, TextureRegion, TextureType},
+    texture::{Texture, TextureGlyph, TextureRegion, TextureType},
     vertex_layout::VertexLayout,
     vertex_list::IntoVertexList,
 };
@@ -29,7 +29,7 @@ struct CachedObject {
 /// A cache for storing graphics objects between renders.
 pub struct GfxCache {
     objects: HandleMap<CachedObject>,
-    names: HashMap<String, CacheHandle>,
+    handles: HashMap<String, CacheHandle>,
 }
 
 impl GfxCache {
@@ -39,7 +39,7 @@ impl GfxCache {
     pub(crate) unsafe fn new() -> Self {
         Self {
             objects: HandleMap::new(),
-            names: HashMap::new(),
+            handles: HashMap::new(),
         }
     }
 
@@ -55,13 +55,14 @@ impl GfxCache {
 
         // Insert the name into the names hashmap.
         if let Some(name) = name {
-            self.names.insert(name.into(), handle.clone());
+            self.handles.insert(name.into(), handle.clone());
         }
 
         handle
     }
 
     /// Get an object from the cache.
+    /// Returns `None` if the object does not exist.
     pub fn get<T: Any>(&self, name_or_handle: impl CacheRef) -> Option<&T> {
         // Get the value from the hashmap
         self.objects
@@ -69,9 +70,23 @@ impl GfxCache {
             .and_then(|v| v.object.downcast_ref())
     }
 
+    /// Get an object's handle.
+    pub fn handle(&self, name_or_handle: impl CacheRef) -> CacheHandle {
+        name_or_handle.handle(self)
+    }
+
     /// Get an object's handle by name.
-    pub fn get_handle_of(&self, name: impl AsRef<str>) -> Option<&CacheHandle> {
-        self.names.get(name.as_ref())
+    /// Returns `None` if the object does not exist.
+    pub fn handle_from_name(&self, name: impl AsRef<str>) -> Option<&CacheHandle> {
+        self.handles.get(name.as_ref())
+    }
+
+    /// Get an object's name by its handle.
+    /// Returns `None` if the object does not exist.
+    pub fn name_from_handle(&self, handle: impl CacheRef) -> Option<&str> {
+        self.objects
+            .get(&handle.handle(self))
+            .and_then(|o| o.name.as_deref())
     }
 
     /// Check if an object exists in the cache.
@@ -88,9 +103,9 @@ impl GfxCache {
         // Remove the object from the objects hashmap.
         let object = self.objects.remove(&handle);
 
-        // Remove the name from the names hashmap.
+        // Remove the handle with the given name from the handles hashmap.
         if let Some(name) = object.as_ref().and_then(|o| o.name.as_deref()) {
-            self.names.remove(name);
+            self.handles.remove(name);
         }
 
         // Downcast the object and return it.
@@ -151,6 +166,7 @@ impl GfxCache {
         texture_type: TextureType,
         path: impl AsRef<Path>,
         regions: Option<HashMap<String, TextureRegion>>,
+        glyphs: Option<HashMap<char, TextureGlyph>>,
     ) -> Result<CacheHandle> {
         let path = path.as_ref();
 
@@ -167,7 +183,8 @@ impl GfxCache {
             .map_err(|e| anyhow::anyhow!("Failed to open image file {:?}: {:?}", path, e))?;
 
         // Create the texture.
-        let texture = unsafe { Texture::__from_image(&name, texture_type, &[image], regions)? };
+        let texture =
+            unsafe { Texture::__from_image(&name, texture_type, &[image], regions, glyphs)? };
 
         // Insert the texture into the cache.
         let handle = self.insert(Some(name), texture);
@@ -191,7 +208,7 @@ impl GfxCache {
         let vertex_layout = self.get_vertex_layout(vertex_layout).unwrap();
 
         // Get the vertex list.
-        let vertex_list = vertex_list.into_vertex_list(vertex_layout.clone());
+        let vertex_list = vertex_list.into_vertex_list(self, vertex_layout.clone());
 
         // Create the vertex buffer.
         let vertex_buffer =
@@ -295,7 +312,7 @@ impl CacheRef for &CacheHandle {
 impl CacheRef for String {
     fn handle(self, cache: &GfxCache) -> CacheHandle {
         cache
-            .get_handle_of(&self)
+            .handle_from_name(&self)
             .unwrap_or_else(|| panic!("Cache does not contain an object with the name {:?}", self))
             .clone()
     }
@@ -305,7 +322,7 @@ impl CacheRef for String {
 impl CacheRef for &str {
     fn handle(self, cache: &GfxCache) -> CacheHandle {
         cache
-            .get_handle_of(self)
+            .handle_from_name(self)
             .unwrap_or_else(|| panic!("Cache does not contain an object with the name {:?}", self))
             .clone()
     }

@@ -39,26 +39,28 @@ impl InputLayout {
         unsafe {
             // Create a vertex array
             gl::CreateVertexArrays(1, &mut handle);
-
-            // Enable the vertex attributes
-            let mut offset = 0;
-            for (index, input) in layout.inputs().iter().enumerate() {
-                gl::EnableVertexArrayAttrib(handle, index as u32);
-                gl::VertexArrayAttribFormat(
-                    handle,
-                    index as u32,
-                    input.component_count() as i32,
-                    gl::FLOAT,
-                    gl::FALSE,
-                    offset as u32,
-                );
-                gl::VertexArrayAttribBinding(handle, index as u32, _VERTEX_BUFFER_LOCATION);
-                gl::VertexArrayBindingDivisor(handle, index as u32, 0);
-                offset += input.component_count() * std::mem::size_of::<f32>();
-            }
         }
 
         Self { layout, handle }
+    }
+
+    pub(crate) unsafe fn __enable_attributes(&self) {
+        // Enable the vertex attributes
+        let mut offset = 0;
+        for (index, input) in self.layout.inputs().iter().enumerate() {
+            gl::EnableVertexArrayAttrib(self.handle, index as u32);
+            gl::VertexArrayAttribBinding(self.handle, index as u32, _VERTEX_BUFFER_LOCATION);
+            gl::VertexArrayAttribFormat(
+                self.handle,
+                index as u32,
+                input.component_count() as i32,
+                gl::FLOAT,
+                gl::FALSE,
+                offset as u32,
+            );
+            gl::VertexArrayBindingDivisor(self.handle, index as u32, 0);
+            offset += input.byte_size();
+        }
     }
 
     /// Get the GL handle.

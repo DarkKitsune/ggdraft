@@ -86,6 +86,9 @@ impl TargetBuffer {
         input_layout.validate_buffer(vertex_buffer)?;
 
         unsafe {
+            // Enable the attributes in the input layout.
+            input_layout.__enable_attributes();
+
             // Bind this target buffer.
             gl::BindFramebuffer(gl::FRAMEBUFFER, self.handle);
             gl::BindVertexArray(input_layout.vertex_array_handle());

@@ -1,7 +1,6 @@
 pub mod app_event;
 pub mod app_prelude;
 pub mod async_data;
-pub mod game;
 
 use crate::{engine::Engine, window};
 use anyhow::Result;

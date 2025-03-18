@@ -10,6 +10,7 @@ pub struct Texture {
     texture_type: TextureType,
     dimensions: Vec<Vector2<u32>>,
     regions: Option<HashMap<String, TextureRegion>>,
+    glyphs: Option<HashMap<char, TextureGlyph>>,
 }
 
 impl !Send for Texture {}
@@ -24,6 +25,7 @@ impl Texture {
         texture_type: TextureType,
         lods: &[image::DynamicImage],
         regions: Option<HashMap<String, TextureRegion>>,
+        glyphs: Option<HashMap<char, TextureGlyph>>,
     ) -> Result<Self> {
         let name = name.as_ref();
 
@@ -101,6 +103,7 @@ impl Texture {
                 texture_type,
                 dimensions,
                 regions,
+                glyphs,
             })
         }
     }
@@ -117,25 +120,61 @@ impl Texture {
     }
 
     /// Get the given texture region.
+    /// Returns `None` if the region does not exist.
     pub fn region(&self, name: impl AsRef<str>) -> Option<&TextureRegion> {
         self.regions.as_ref()?.get(name.as_ref())
     }
 
     /// Get the min and max texture coordinates of the given texture region.
+    /// Returns `None` if the region does not exist.
     pub fn region_tex_coord(&self, name: impl AsRef<str>) -> Option<(Vector2<f32>, Vector2<f32>)> {
         let region = self.region(name)?;
         let dimensions = self.dimensions(0)?.convert_to::<f32>().unwrap();
 
+        let min = region.min_pixel().convert_to::<f32>().unwrap() / dimensions;
+        let max = region.max_pixel().convert_to::<f32>().unwrap() / dimensions;
+
+        // Flip the Y axis.
         Some((
-            region.min_pixel().convert_to::<f32>().unwrap() / dimensions,
-            region.max_pixel().convert_to::<f32>().unwrap() / dimensions,
+            vector!(min.x(), max.y()),
+            vector!(max.x(), min.y()),
         ))
     }
 
     /// Get the min and max LOD levels of the given texture region.
+    /// Returns `None` if the region does not exist.
     pub fn region_lod_levels(&self, name: impl AsRef<str>) -> Option<(u32, u32)> {
         let region = self.region(name)?;
         Some((region.min_lod(), region.max_lod()))
+    }
+
+    /// Get the given character glyph in this texture.
+    /// Returns `None` if the glyph does not exist.
+    pub fn glyph(&self, character: char) -> Option<&TextureGlyph> {
+        self.glyphs.as_ref()?.get(&character)
+    }
+
+    /// Get the min and max texture coordinates of the given character glyph.
+    /// Returns `None` if the glyph does not exist.
+    pub fn glyph_tex_coord(&self, character: char) -> Option<(Vector2<f32>, Vector2<f32>)> {
+        let glyph = self.glyph(character)?;
+        let dimensions = self.dimensions(0)?.convert_to::<f32>().unwrap();
+
+        let min = glyph.region().min_pixel().convert_to::<f32>().unwrap() / dimensions;
+        let max = glyph.region().max_pixel().convert_to::<f32>().unwrap() / dimensions;
+
+        // Flip the Y axis.
+        Some((
+            vector!(min.x(), max.y()),
+            vector!(max.x(), min.y()),
+        ))
+    }
+
+    /// Get the min and max LOD levels of the given character glyph.
+    /// Returns `None` if the glyph does not exist.
+    pub fn glyph_lod_levels(&self, character: char) -> Option<(u32, u32)> {
+        let glyph = self.glyph(character)?;
+        Some((glyph.region().min_lod(), glyph.region().max_lod()))
     }
 
     /// Get the GL handle.
@@ -177,6 +216,20 @@ impl Texture {
         let name = name.as_ref();
         let (min, max) = self.region_tex_coord(name)?;
         let (min_lod, max_lod) = self.region_lod_levels(name)?;
+
+        Some(TextureView {
+            texture_handle: self.handle,
+            texture_type: self.texture_type,
+            min: min.append(min_lod as f32),
+            max: max.append(max_lod as f32),
+        })
+    }
+
+    /// Get a `TextureView` to a character glyph in this texture.
+    /// Returns `None` if the glyph does not exist.
+    pub fn glyph_view(&self, character: char) -> Option<TextureView> {
+        let (min, max) = self.glyph_tex_coord(character)?;
+        let (min_lod, max_lod) = self.glyph_lod_levels(character)?;
 
         Some(TextureView {
             texture_handle: self.handle,
@@ -291,6 +344,16 @@ impl TextureRegion {
         vector!(self.max.x() - self.min.x(), self.max.y() - self.min.y())
     }
 
+    /// Get the aspect ratio of this region.
+    /// This is the width divided by the height.
+    pub const fn aspect_ratio(&self) -> f32 {
+        let size = vector!(
+            (self.max.x() - self.min.x()) as f32,
+            (self.max.y() - self.min.y()) as f32
+        );
+        size.x() / size.y()
+    }
+
     /// Get the minimum LOD level.
     pub const fn min_lod(&self) -> u32 {
         self.min.z() as u32
@@ -304,6 +367,38 @@ impl TextureRegion {
     /// Get the number of LOD levels in this region.
     pub const fn lod_count(&self) -> u32 {
         (self.max.z() - self.min.z()) as u32
+    }
+}
+
+/// Represents a glyph within a texture.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TextureGlyph {
+    /// The texture region containing the glyph.
+    region: TextureRegion,
+    /// The number of pixels to advance after rendering the glyph at a scale of 1.
+    advance: i32,
+}
+
+impl TextureGlyph {
+    /// Create a new texture glyph with the given region and advance pixels.
+    pub const fn new(region: TextureRegion, advance: i32) -> Self {
+        Self { region, advance }
+    }
+
+    /// Get the texture region containing the glyph.
+    pub const fn region(&self) -> TextureRegion {
+        self.region
+    }
+
+    /// Get the number of pixels to advance after rendering the glyph at a scale of 1.
+    pub const fn advance(&self) -> i32 {
+        self.advance
+    }
+}
+
+impl AsRef<TextureRegion> for TextureGlyph {
+    fn as_ref(&self) -> &TextureRegion {
+        &self.region
     }
 }
 

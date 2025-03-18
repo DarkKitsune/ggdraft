@@ -107,6 +107,16 @@ impl ShaderOutputs {
             panic!("Cannot set vertex position in a non-vertex shader");
         }
 
+        // Panic if the expression is not a vec4.
+        let shader_type = expression.shader_type().unwrap();
+        if shader_type != ShaderType::Vec4 {
+            panic!(
+                "Vertex position type must be {}, found {}",
+                ShaderType::Vec4.rust_name(),
+                shader_type.rust_name()
+            );
+        }
+
         self.vertex_position = Some(expression);
     }
 
@@ -115,6 +125,16 @@ impl ShaderOutputs {
         // Panic if this is not a fragment shader.
         if self.stage != ShaderStage::Fragment {
             panic!("Cannot set fragment color in a non-fragment shader");
+        }
+
+        // Panic if the expression is not a vec4.
+        let shader_type = expression.shader_type().unwrap();
+        if shader_type != ShaderType::Vec4 {
+            panic!(
+                "Fragment color type must be {}, found {}",
+                ShaderType::Vec4.rust_name(),
+                shader_type.rust_name()
+            );
         }
 
         self.fragment_color = Some(expression);

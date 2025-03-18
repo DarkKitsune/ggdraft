@@ -7,7 +7,6 @@ pub use std::rc::Rc;
 
 pub use crate::{
     app::*,
-    class,
     color::*,
     geometry::shape::*,
     gfx::{
@@ -19,6 +18,7 @@ pub use crate::{
         vertex_layout::VertexInput,
         Gfx,
     },
+    node_class,
     universe_ref::*,
     window::WindowEvents,
 };
