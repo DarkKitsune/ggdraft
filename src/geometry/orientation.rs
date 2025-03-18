@@ -9,6 +9,7 @@ pub struct Orientation {
 }
 
 impl Orientation {
+    /// Create a new orientation.
     pub const fn new(
         position: Vector3<f32>,
         rotation: Quaternion<f32>,
@@ -18,6 +19,19 @@ impl Orientation {
             position,
             rotation,
             scale,
+        }
+    }
+
+    /// Create a new orientation for a basic 2D orthographic camera.
+    /// Positive X is right, positive Y is up, and positive Z is out of the screen.
+    pub fn new_orthographic(
+        position: Vector2<f32>,
+        z_radians: f32,
+    ) -> Self {
+        Self {
+            position: vector!(position.x(), position.y(), 0.0),
+            rotation: Quaternion::from_rotation_y(std::f32::consts::PI).and_then(&Quaternion::from_rotation_z(z_radians)),
+            scale: Vector::one(),
         }
     }
 

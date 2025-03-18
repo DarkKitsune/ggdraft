@@ -149,14 +149,16 @@ pub fn render(
     parameters.set_model_matrix(Matrix::new_translation(&vector!(128.0, 128.0, 0.0)));
     
     // Set the camera
-    let camera_orientation = Orientation::new(
-        Vector::zero(),
-        Quaternion::from_rotation_y(180.0.to_radians()),
-        Vector::one(),
-    );
     parameters.set_camera(
         framebuffer_size.convert_to().unwrap(),
-        &RenderCamera::orthographic(camera_orientation, -1.0, 1.0),
+        &RenderCamera::orthographic(
+            Orientation::new_orthographic(
+                Vector::zero(),
+                0.0
+            ),
+            -1.0,
+            1.0
+        ),
     );
 
     // Set the font texture
