@@ -83,9 +83,9 @@ pub fn init_render(
             "klmnopqrstuvwxy",
             "z{|}~",
         ],
-        vector!(0, 0),
+        Vector::zero(),
         vector!(20, 20),
-        vector!(2, 2),
+        vector!(1, 1),
     );
 
     // Load a font texture
@@ -101,7 +101,7 @@ pub fn init_render(
     let text = Text::new(
         Vector::zero(),
         Quaternion::identity(),
-        vector!(40.0; 2),
+        vector!(40.0, 40.0),
         TextAlignment::CENTER,
         font_texture,
         color::WHITE,
