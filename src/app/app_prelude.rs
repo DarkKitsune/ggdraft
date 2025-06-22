@@ -8,8 +8,8 @@ pub use std::rc::Rc;
 pub use crate::{
     app::*,
     color::*,
-    geometry::shape::*,
     geometry::orientation::*,
+    geometry::shape::*,
     gfx::{
         gfx_cache::GfxCache,
         render_camera::RenderCamera,

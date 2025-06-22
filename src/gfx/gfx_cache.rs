@@ -44,7 +44,7 @@ impl GfxCache {
     }
 
     /// Insert a new object into the cache.
-    pub fn insert<T: Any>(&mut self, name: Option<impl Into<String>>, value: T) -> CacheHandle {
+    pub fn insert<T: Any>(&mut self, name: Option<String>, value: T) -> CacheHandle {
         let name = name.map(|name| name.into());
 
         // Insert the value into the hashmap.
@@ -117,7 +117,7 @@ impl GfxCache {
     /// The actual type in the cache is `Rc<VertexLayout>`.
     pub fn create_vertex_layout(
         &mut self,
-        name: Option<impl Into<String>>,
+        name: Option<String>,
         f: impl FnOnce(VertexLayout) -> VertexLayout,
     ) -> CacheHandle {
         // Create the vertex layout.
@@ -140,7 +140,7 @@ impl GfxCache {
     /// Create a new buffer in the cache.
     pub fn create_buffer_from_slice<T: 'static>(
         &mut self,
-        name: Option<impl Into<String>>,
+        name: Option<String>,
         data: &[T],
     ) -> CacheHandle {
         // Create the buffer.
@@ -162,7 +162,7 @@ impl GfxCache {
     // TODO: Implement LODs
     pub fn create_texture_from_file(
         &mut self,
-        name: Option<impl Into<String>>,
+        name: Option<String>,
         texture_type: TextureType,
         path: impl AsRef<Path>,
         regions: Option<HashMap<String, TextureRegion>>,
@@ -171,7 +171,7 @@ impl GfxCache {
         let path = path.as_ref();
 
         // Get the file name from the path without the extension.
-        let name = name.map(|name| name.into()).unwrap_or_else(|| {
+        let name = name.unwrap_or_else(|| {
             path.file_stem()
                 .and_then(|s| s.to_str())
                 .map(|s| s.to_string())
@@ -200,7 +200,7 @@ impl GfxCache {
     /// Create a new mesh in the cache from the given vertex list.
     pub fn create_mesh<'a>(
         &mut self,
-        name: Option<impl Into<String>>,
+        name: Option<String>,
         vertex_layout: impl CacheRef,
         vertex_list: impl IntoVertexList<'a>,
     ) -> CacheHandle {
@@ -232,7 +232,7 @@ impl GfxCache {
     /// The program's vertex and fragment shaders are generated using the callbacks.
     pub fn create_program_vertex_fragment(
         &mut self,
-        name: Option<impl Into<String>>,
+        name: Option<String>,
         input_layout: impl CacheRef,
         vertex: impl FnOnce(&ShaderInputs, &mut ShaderParameters, &mut ShaderOutputs) -> Result<()>,
         fragment: impl FnOnce(&ShaderInputs, &mut ShaderParameters, &mut ShaderOutputs) -> Result<()>,
@@ -267,7 +267,7 @@ impl GfxCache {
     /// Create a new input layout in the cache from the given vertex layout.
     pub fn create_input_layout_from_vertex_layout(
         &mut self,
-        name: Option<impl Into<String>>,
+        name: Option<String>,
         vertex_layout: impl CacheRef,
     ) -> CacheHandle {
         // Get the vertex layout from the cache

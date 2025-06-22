@@ -59,19 +59,10 @@ pub fn init_render(
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
     // Create vertex layout describing the vertices going into the shader
-    let vertex_layout =
-        graphics_cache.create_vertex_layout(Some("vertex layout"), Text::build_vertex_layout);
+    let vertex_layout = graphics_cache.create_vertex_layout(None, Text::build_vertex_layout);
 
     // Create an input layout from the vertex layout
-    graphics_cache.create_input_layout_from_vertex_layout(Some("input layout"), &vertex_layout);
-
-    // Create shader program
-    graphics_cache.create_program_vertex_fragment(
-        Some("program"),
-        "input layout",
-        Text::vertex_shader,
-        Text::fragment_shader,
-    )?;
+    let input_layout = graphics_cache.create_input_layout_from_vertex_layout(None, &vertex_layout);
 
     // Create a glyph map
     let glyphs = Text::build_glyph_map(
@@ -92,26 +83,34 @@ pub fn init_render(
 
     // Load a font texture
     let font_texture = graphics_cache.create_texture_from_file(
-        Some("font_texture"),
+        None,
         TextureType::Color,
         "assets/ascii.png",
         None,
         Some(glyphs),
     )?;
 
-    // Create a text object
+    // Create a text object that can be converted to a mesh
     let text = Text::new(
         Vector::zero(),
         Quaternion::identity(),
         vector!(40.0, 40.0),
         TextAlignment::CENTER,
-        font_texture,
+        font_texture.clone(),
         color::WHITE,
         "Hello, world!",
     );
 
     // Create a mesh from the text object
-    graphics_cache.create_mesh(Some("mesh0"), &vertex_layout, &text);
+    let mesh = graphics_cache.create_mesh(None, &vertex_layout, &text);
+
+    // Create shader program
+    let program = graphics_cache.create_program_vertex_fragment(
+        None,
+        input_layout.clone(),
+        Text::vertex_shader,
+        Text::fragment_shader,
+    )?;
 
     // Create a viewport node with a default camera
     let viewport_node = universe.create_node(None, Viewport::new_default());
@@ -121,16 +120,17 @@ pub fn init_render(
         Some(&viewport_node),
         MeshRenderer::new(
             Orientation::new_orthographic(Vector::zero(), 0.0),
-            graphics_cache.handle("mesh0"),
-            graphics_cache.handle("input layout"),
-            graphics_cache.handle("program"),
+            mesh,
+            input_layout,
+            program,
             RenderParameters::new()
-            // Pass the font texture to the parameters
+                // Pass the font texture to the parameters
                 .with(
                     "font_texture",
-                    graphics_cache.get_texture("font_texture")
+                    graphics_cache
+                        .get_texture(font_texture)
                         .unwrap()
-                        .full_view()
+                        .full_view(),
                 ),
         ),
     );
@@ -164,7 +164,6 @@ pub fn render(
     // Clear the framebuffer depth
     framebuffer.clear_depth();
 
-    
     // Find all viewport nodes in the universe
     let viewport_nodes = universe.nodes().with_class::<Viewport>();
 
@@ -193,9 +192,10 @@ pub fn render(
                 &child,
                 &framebuffer,
                 framebuffer_size,
-                camera, true,
+                camera,
+                true,
                 graphics_cache,
-                Some(universe)
+                Some(universe),
             );
         }
     }

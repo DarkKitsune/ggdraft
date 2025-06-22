@@ -53,6 +53,7 @@ impl Viewport {
     /// Get the aspect ratio of the viewport based on the given target buffer size.
     /// This is the width divided by the height.
     pub fn aspect_ratio(&self, target_buffer_size: Vector2<u32>) -> f32 {
-        (target_buffer_size.x() as f32 * self.size.x()) / (target_buffer_size.y() as f32 * self.size.y())
+        (target_buffer_size.x() as f32 * self.size.x())
+            / (target_buffer_size.y() as f32 * self.size.y())
     }
 }
