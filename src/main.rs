@@ -6,6 +6,7 @@ pub mod engine;
 pub mod geometry;
 pub mod gfx;
 pub mod node_class;
+pub mod node_component;
 pub mod universe_ref;
 pub mod window;
 

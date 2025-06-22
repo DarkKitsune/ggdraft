@@ -324,11 +324,10 @@ impl ShapeToTriangles for Text {
                 AxisAlignment::Max => -1.0,
             },
         ) * grid_size;
-        let base_position = self.position()
-            + x_step * alignment_offset.x()
-            + y_step * alignment_offset.y();
+        let base_position =
+            self.position() + x_step * alignment_offset.x() + y_step * alignment_offset.y();
         let mut rectangles = Vec::new();
-        
+
         // Iterate over the grid and create a rectangle for each view
         for (y, row) in view_grid.iter().enumerate() {
             for (x, view) in row.iter().enumerate() {

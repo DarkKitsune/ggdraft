@@ -1,6 +1,8 @@
 use crate::{
     color,
-    geometry::{orientation::Orientation, text::{Text, TextAlignment}}, gfx::render_camera::RenderCamera,
+    geometry::text::{Text, TextAlignment},
+    node_class::{MeshRenderer, Viewport},
+    node_component::render_component::RenderComponent,
 };
 
 use super::app_prelude::*;
@@ -52,7 +54,7 @@ pub fn think(
 // Called when initializing the rendering engine
 pub fn init_render(
     _engine: &mut Engine,
-    _universe: &mut Universe,
+    universe: &mut Universe,
     _async_data: AppData<AsyncData>,
     graphics_cache: &mut GfxCache,
 ) -> AppEventResult<()> {
@@ -111,6 +113,28 @@ pub fn init_render(
     // Create a mesh from the text object
     graphics_cache.create_mesh(Some("mesh0"), &vertex_layout, &text);
 
+    // Create a viewport node with a default camera
+    let viewport_node = universe.create_node(None, Viewport::new_default());
+
+    // Add a mesh renderer node to the viewport node
+    universe.create_node(
+        Some(&viewport_node),
+        MeshRenderer::new(
+            Orientation::new_orthographic(Vector::zero(), 0.0),
+            graphics_cache.handle("mesh0"),
+            graphics_cache.handle("input layout"),
+            graphics_cache.handle("program"),
+            RenderParameters::new()
+            // Pass the font texture to the parameters
+                .with(
+                    "font_texture",
+                    graphics_cache.get_texture("font_texture")
+                        .unwrap()
+                        .full_view()
+                ),
+        ),
+    );
+
     println!("Render initialized.");
 
     Ok(())
@@ -119,12 +143,17 @@ pub fn init_render(
 // Called when the engine renders a frame
 pub fn render(
     _engine: &mut Engine,
-    _universe: &mut Universe,
+    universe: &mut Universe,
     _async_data: AppData<AsyncData>,
     graphics_cache: &mut GfxCache,
     framebuffer: TargetBuffer,
     framebuffer_size: Vector2<u32>,
 ) -> AppEventResult<()> {
+    // Set the viewport to cover the entire framebuffer
+    unsafe {
+        framebuffer.__set_viewport(vector!(0.5, 0.5), vector!(1.0, 1.0), framebuffer_size);
+    }
+
     // Clear the framebuffer with a color
     framebuffer.clear_with_color(
         BLUE // Start with blue
@@ -135,43 +164,40 @@ pub fn render(
     // Clear the framebuffer depth
     framebuffer.clear_depth();
 
-    // Retrieve the program and input layout
-    let program = graphics_cache.get("program").unwrap();
-    let input_layout = graphics_cache.get("input layout").unwrap();
-
-    // Retrieve the mesh
-    let mesh0 = graphics_cache.get("mesh0").unwrap();
-
-    // Begin the parameters for rendering
-    let mut parameters = RenderParameters::new();
-
-    // Set the model matrix
-    parameters.set_model_matrix(Matrix::new_translation(&vector!(128.0, 128.0, 0.0)));
     
-    // Set the camera
-    parameters.set_camera(
-        framebuffer_size.convert_to().unwrap(),
-        &RenderCamera::orthographic(
-            Orientation::new_orthographic(
-                Vector::zero(),
-                0.0
-            ),
-            -1.0,
-            1.0
-        ),
-    );
+    // Find all viewport nodes in the universe
+    let viewport_nodes = universe.nodes().with_class::<Viewport>();
 
-    // Set the font texture
-    parameters.set(
-        "font_texture",
-        graphics_cache
-            .get_texture("font_texture")
-            .unwrap()
-            .full_view(),
-    );
+    // For each viewport, render its contents with the appropriate viewport settings
+    // and camera
+    for node in viewport_nodes {
+        // Get the viewport information
+        let viewport = node.class_as::<Viewport>().unwrap();
+        let camera = viewport.camera();
 
-    // Draw the triangle
-    framebuffer.render_mesh(program, input_layout, &parameters, &mesh0)?;
+        // Set the viewport in the state
+        unsafe {
+            framebuffer.__set_viewport(viewport.center(), viewport.size(), framebuffer_size);
+        }
 
+        // Find all children of the viewport node that have a RenderComponent
+        let children = universe
+            .nodes_with_handles(node.children())
+            .flatten()
+            .with_component::<RenderComponent>();
+
+        // For each child node, render it
+        for (child, render_component) in children {
+            // Render the child node using its render component
+            render_component.render(
+                &child,
+                &framebuffer,
+                framebuffer_size,
+                camera, true,
+                graphics_cache,
+                Some(universe)
+            );
+        }
+    }
     Ok(())
 }

@@ -135,10 +135,7 @@ impl Texture {
         let max = region.max_pixel().convert_to::<f32>().unwrap() / dimensions;
 
         // Flip the Y axis.
-        Some((
-            vector!(min.x(), max.y()),
-            vector!(max.x(), min.y()),
-        ))
+        Some((vector!(min.x(), max.y()), vector!(max.x(), min.y())))
     }
 
     /// Get the min and max LOD levels of the given texture region.
@@ -164,10 +161,7 @@ impl Texture {
         let max = glyph.region().max_pixel().convert_to::<f32>().unwrap() / dimensions;
 
         // Flip the Y axis.
-        Some((
-            vector!(min.x(), max.y()),
-            vector!(max.x(), min.y()),
-        ))
+        Some((vector!(min.x(), max.y()), vector!(max.x(), min.y())))
     }
 
     /// Get the min and max LOD levels of the given character glyph.

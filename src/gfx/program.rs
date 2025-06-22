@@ -169,6 +169,8 @@ pub trait UniformValue: Any {
     fn value_type(&self) -> ShaderType;
     /// Get the value as an `Any` trait object
     fn as_any(&self) -> &dyn Any;
+    /// Clone the value as a boxed `UniformValue`
+    fn boxed_clone(&self) -> Box<dyn UniformValue>;
 }
 
 impl UniformValue for f32 {
@@ -186,6 +188,10 @@ impl UniformValue for f32 {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn boxed_clone(&self) -> Box<dyn UniformValue> {
+        Box::new(*self)
     }
 }
 
@@ -205,6 +211,10 @@ impl UniformValue for Vector2<f32> {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn boxed_clone(&self) -> Box<dyn UniformValue> {
+        Box::new(*self)
+    }
 }
 
 impl UniformValue for Vector3<f32> {
@@ -222,6 +232,10 @@ impl UniformValue for Vector3<f32> {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn boxed_clone(&self) -> Box<dyn UniformValue> {
+        Box::new(*self)
     }
 }
 
@@ -241,6 +255,10 @@ impl UniformValue for Vector4<f32> {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn boxed_clone(&self) -> Box<dyn UniformValue> {
+        Box::new(*self)
+    }
 }
 
 impl UniformValue for Matrix4x4<f32> {
@@ -258,6 +276,10 @@ impl UniformValue for Matrix4x4<f32> {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn boxed_clone(&self) -> Box<dyn UniformValue> {
+        Box::new(*self)
     }
 }
 
@@ -294,6 +316,10 @@ impl UniformValue for TextureView {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn boxed_clone(&self) -> Box<dyn UniformValue> {
+        Box::new(self.clone())
     }
 }
 

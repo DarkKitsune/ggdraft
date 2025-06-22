@@ -24,13 +24,11 @@ impl Orientation {
 
     /// Create a new orientation for a basic 2D orthographic camera.
     /// Positive X is right, positive Y is up, and positive Z is out of the screen.
-    pub fn new_orthographic(
-        position: Vector2<f32>,
-        z_radians: f32,
-    ) -> Self {
+    pub fn new_orthographic(position: Vector2<f32>, z_radians: f32) -> Self {
         Self {
             position: vector!(position.x(), position.y(), 0.0),
-            rotation: Quaternion::from_rotation_y(std::f32::consts::PI).and_then(&Quaternion::from_rotation_z(z_radians)),
+            rotation: Quaternion::from_rotation_y(std::f32::consts::PI)
+                .and_then(&Quaternion::from_rotation_z(z_radians)),
             scale: Vector::one(),
         }
     }

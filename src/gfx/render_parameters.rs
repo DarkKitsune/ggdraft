@@ -14,7 +14,26 @@ pub struct RenderParameter {
     value: Box<dyn UniformValue>,
 }
 
+impl Clone for RenderParameter {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            value: self.value.boxed_clone(),
+        }
+    }
+}
+
+impl std::fmt::Debug for RenderParameter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RenderParameter")
+            .field("name", &self.name)
+            .field("value_type", &self.value.value_type())
+            .finish()
+    }
+}
+
 /// Parameters for the render pipeline.
+#[derive(Clone, Debug)]
 pub struct RenderParameters {
     parameters: Vec<RenderParameter>,
 }
@@ -87,5 +106,35 @@ impl RenderParameters {
     pub fn set_camera(&mut self, viewport_size: Vector2<f32>, camera: &RenderCamera) {
         self.set_view_matrix(camera.get_view_matrix());
         self.set_projection_matrix(camera.get_projection_matrix(viewport_size));
+    }
+
+    /// Set the render parameter by name and return the RenderParameters instance for chaining.
+    pub fn with<T: UniformValue + 'static>(mut self, name: impl Into<String>, value: T) -> Self {
+        self.set(name, value);
+        self
+    }
+
+    /// Set the view matrix and return the RenderParameters instance for chaining.
+    pub fn with_view_matrix(mut self, matrix: Matrix4x4<f32>) -> Self {
+        self.set_view_matrix(matrix);
+        self
+    }
+
+    /// Set the projection matrix and return the RenderParameters instance for chaining.
+    pub fn with_projection_matrix(mut self, matrix: Matrix4x4<f32>) -> Self {
+        self.set_projection_matrix(matrix);
+        self
+    }
+
+    /// Set the model matrix and return the RenderParameters instance for chaining.
+    pub fn with_model_matrix(mut self, matrix: Matrix4x4<f32>) -> Self {
+        self.set_model_matrix(matrix);
+        self
+    }
+
+    /// Set the camera and return the RenderParameters instance for chaining.
+    pub fn with_camera(mut self, viewport_size: Vector2<f32>, camera: &RenderCamera) -> Self {
+        self.set_camera(viewport_size, camera);
+        self
     }
 }

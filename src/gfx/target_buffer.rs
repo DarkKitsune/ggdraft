@@ -126,6 +126,30 @@ impl TargetBuffer {
 
         Ok(())
     }
+
+    /// Sets the viewport for rendering.
+    /// This will modify the OpenGL viewport globally, so it should be used with care.
+    pub(crate) unsafe fn __set_viewport(
+        &self,
+        center: Vector2<f32>,
+        size: Vector2<f32>,
+        framebuffer_size: Vector2<u32>,
+    ) {
+        // Make size absolute.
+        let size = vector!(size.x().abs(), size.y().abs());
+
+        // Calculate the viewport position in pixels using the framebuffer size.
+        let top_left = center - size / 2.0;
+        let x = (top_left.x() * framebuffer_size.x() as f32) as i32;
+        let y = (top_left.y() * framebuffer_size.y() as f32) as i32;
+        let width = (size.x() * framebuffer_size.x() as f32) as i32;
+        let height = (size.y() * framebuffer_size.y() as f32) as i32;
+
+        // Bind the framebuffer.
+        unsafe {
+            gl::Viewport(x, y, width, height);
+        }
+    }
 }
 
 impl Default for TargetBuffer {

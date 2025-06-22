@@ -9,8 +9,10 @@ pub use crate::{
     app::*,
     color::*,
     geometry::shape::*,
+    geometry::orientation::*,
     gfx::{
         gfx_cache::GfxCache,
+        render_camera::RenderCamera,
         render_parameters::RenderParameters,
         shader_gen::prelude::*,
         target_buffer::TargetBuffer,
